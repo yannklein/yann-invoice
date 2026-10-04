@@ -49,72 +49,103 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Palette from the yannklein.dev homelab dashboard: night mesh, glass cards, warm off-white. */
+  color-scheme: dark;
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --night: #06080f;
+  --background: #06080f;
+  --foreground: #f0ede8;
+  --card: rgb(255 255 255 / 0.06);
+  --card-foreground: #f0ede8;
+  --popover: #12141c;
+  --popover-foreground: #f0ede8;
+  --primary: #f0ede8;
+  --primary-foreground: #06080f;
+  --secondary: rgb(255 255 255 / 0.08);
+  --secondary-foreground: #f0ede8;
+  --muted: rgb(255 255 255 / 0.08);
+  --muted-foreground: rgb(240 237 232 / 0.5);
+  --accent: rgb(255 255 255 / 0.1);
+  --accent-foreground: #f0ede8;
+  --destructive: #f2768f;
+  --border: rgb(240 237 232 / 0.1);
+  --input: rgb(240 237 232 / 0.14);
+  --ring: #2bb5aa;
+  --chart-1: #0d6e68;
+  --chart-2: #0e3d7a;
+  --chart-3: #7a1040;
+  --chart-4: #7a5208;
+  --chart-5: #2d2880;
+  --radius: 0.875rem;
+  --sidebar: #0c0e16;
+  --sidebar-foreground: #f0ede8;
+  --sidebar-primary: #f0ede8;
+  --sidebar-primary-foreground: #06080f;
+  --sidebar-accent: rgb(255 255 255 / 0.08);
+  --sidebar-accent-foreground: #f0ede8;
+  --sidebar-border: rgb(240 237 232 / 0.1);
+  --sidebar-ring: #2bb5aa;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+html {
+  background: var(--night);
+}
+
+/* Drifting colour mesh behind everything, as on home.yannklein.dev. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -25%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 70% at 10% 40%, #0d6e68 0%, transparent 50%),
+    radial-gradient(ellipse 70% 80% at 80% 10%, #0e3d7a 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 65% 80%, #7a1040 0%, transparent 50%),
+    radial-gradient(ellipse 60% 70% at 92% 58%, #7a5208 0%, transparent 45%),
+    radial-gradient(ellipse 75% 70% at 20% 90%, #2d2880 0%, transparent 45%),
+    radial-gradient(ellipse 55% 55% at 50% 18%, #0a5c40 0%, transparent 50%),
+    var(--night);
+  animation: meshDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes meshDrift {
+  0%   { transform: scale(1)    rotate(0deg);  filter: hue-rotate(0deg)  saturate(70%); }
+  50%  { transform: scale(1.06) rotate(4deg);  filter: hue-rotate(22deg) saturate(85%); }
+  100% { transform: scale(1.12) rotate(-3deg); filter: hue-rotate(44deg) saturate(75%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+@layer components {
+  /* Frosted glass surfaces: cards and tables. */
+  [data-slot='card'],
+  [data-slot='table-container'] {
+    background: var(--card);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 14px;
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.35);
+  }
+
+  [data-slot='card-title'],
+  [data-slot='table-head'],
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(240 237 232 / 0.4);
+  }
+
+  [data-slot='table-head']:first-child,
+  [data-slot='table-cell']:first-child { padding-left: 1.125rem; }
+  [data-slot='table-head']:last-child,
+  [data-slot='table-cell']:last-child { padding-right: 1.125rem; }
+  [data-slot='table-cell'] { padding-block: 0.7rem; }
 }
 
 @layer base {
@@ -122,7 +153,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
   html {
     @apply font-sans;

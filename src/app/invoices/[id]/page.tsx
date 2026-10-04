@@ -25,7 +25,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-semibold">Invoice {inv.number ?? row.title}</h1>
+        <h1 className="flex-1 text-3xl font-black tracking-tight">Invoice {inv.number ?? row.title}</h1>
         <a className={buttonVariants({ variant: 'outline' })} href={sheetUrl(id)} target="_blank">Open in Sheets ↗</a>
         <a className={buttonVariants()} href={`/api/invoices/${id}/pdf`}>Download PDF</a>
       </div>

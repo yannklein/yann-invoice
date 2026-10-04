@@ -25,7 +25,7 @@ interface Props {
 }
 
 const NEW = '__new__';
-const selectCls = 'h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm';
+const selectCls = 'h-8 w-full rounded-lg border border-input bg-input/30 px-2.5 text-sm';
 const pct = (r: number) => `${+(r * 100).toFixed(2)}%`;
 
 export function NewInvoiceForm({ clients, banks, numbers, settings, today }: Props) {
@@ -106,17 +106,17 @@ export function NewInvoiceForm({ clients, banks, numbers, settings, today }: Pro
     }),
   );
 
-  const err = (msg?: string) => (msg ? <p className="text-xs text-red-600">{msg}</p> : null);
+  const err = (msg?: string) => (msg ? <p className="text-xs text-destructive">{msg}</p> : null);
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
-      <h1 className="text-xl font-semibold">New invoice</h1>
+      <h1 className="text-3xl font-black tracking-tight">New invoice</h1>
 
       <section className="grid gap-3 md:grid-cols-3">
         <div>
           <Label htmlFor="number">Number</Label>
           <Input id="number" {...register('number', { onChange: () => setNumberEdited(true) })} />
-          {duplicate && <p className="text-xs text-amber-600">This number is already used.</p>}
+          {duplicate && <p className="text-xs text-amber-400">This number is already used.</p>}
           {err(errors.number?.message)}
         </div>
         <div>
@@ -201,7 +201,7 @@ export function NewInvoiceForm({ clients, banks, numbers, settings, today }: Pro
         <div className="space-y-2">
           <Label htmlFor="notesText">Notes</Label>
           <Textarea id="notesText" rows={5} {...register('notesText')} />
-          {tax.warnings.map((m) => <p key={m} className="text-xs text-amber-600">{m}</p>)}
+          {tax.warnings.map((m) => <p key={m} className="text-xs text-amber-400">{m}</p>)}
         </div>
         <div className="space-y-2">
           <Label htmlFor="bank">Bank account</Label>
@@ -214,7 +214,7 @@ export function NewInvoiceForm({ clients, banks, numbers, settings, today }: Pro
         </div>
       </section>
 
-      {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+      {serverError && <p className="text-sm text-destructive">{serverError}</p>}
       <Button type="submit" disabled={pending}>{pending ? 'Creating…' : 'Create invoice'}</Button>
     </form>
   );
