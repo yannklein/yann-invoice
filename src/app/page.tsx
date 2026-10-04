@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { SyncWarning } from '@/components/SyncWarning';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getGoogle } from '@/lib/google/client';
@@ -11,7 +12,7 @@ import { formatMoney } from '@/lib/invoice/totals';
 export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q = '' } = await searchParams;
   const g = await getGoogle();
-  const rows = await syncIndex(g, await requireIds(g));
+  const { rows, failed } = await syncIndex(g, await requireIds(g));
   const needle = q.trim().toLowerCase();
   const shown = needle
     ? rows.filter((r) => [r.invoice.number, r.invoice.clientName, r.title].some((s) => s?.toLowerCase().includes(needle)))
@@ -19,6 +20,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   return (
     <div className="space-y-4">
+      <SyncWarning failed={failed.length} consequence="They are shown as they were at the last successful sync." />
       <div className="flex items-center gap-2">
         <form className="flex flex-1 gap-2">
           <Input name="q" defaultValue={q} placeholder="Search number or client" />

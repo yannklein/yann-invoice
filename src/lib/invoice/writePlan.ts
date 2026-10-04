@@ -44,38 +44,51 @@ const setText = (sheetId: number, rowIndex: number, columnIndex: number, text: s
 
 const bankCapacity = (grid: Grid, L: Located) => Math.max(0, lastNonEmptyRow(grid, A) - L.bankRow);
 
-/** Row inserts/deletes, ordered bottom-up so each request's row indices are still valid. */
+interface RowOp {
+  at: number;
+  kind: 'delete' | 'insert';
+  requests: Request[];
+}
+
+/**
+ * Row inserts/deletes, applied bottom-up so each request's row indices are still valid.
+ * At the same row a delete runs before an insert, so the delete never hits a freshly inserted row.
+ */
 export function planStructure(layout: Layout, grid: Grid, d: InvoiceDraft, sheetId: number): Request[] {
   const L = need(layout);
-  const reqs: Request[] = [];
+  const ops: RowOp[] = [];
+  const insert = (at: number, count: number, ...extra: Request[]) =>
+    ops.push({ at, kind: 'insert', requests: [insertRows(sheetId, at, count), ...extra] });
+  const remove = (from: number, to: number) => ops.push({ at: from, kind: 'delete', requests: [deleteRows(sheetId, from, to)] });
 
   const bankHave = bankCapacity(grid, L);
-  if (d.bankLines.length > bankHave) reqs.push(insertRows(sheetId, L.bankRow + 1 + bankHave, d.bankLines.length - bankHave));
+  if (d.bankLines.length > bankHave) insert(L.bankRow + 1 + bankHave, d.bankLines.length - bankHave);
 
   const notesHave = L.bankRow - L.notesRow - 1;
-  if (d.notes.length > notesHave) reqs.push(insertRows(sheetId, L.bankRow, d.notes.length - notesHave));
+  if (d.notes.length > notesHave) insert(L.bankRow, d.notes.length - notesHave);
 
   if (d.withholdingRate > 0 && L.whtRateRow == null) {
     if (L.vatAmountRow !== L.vatRateRow + 1) throw new Error('Invoice template VAT rows must be adjacent');
     const at = L.vatAmountRow + 1;
-    reqs.push(
-      insertRows(sheetId, at, 2),
+    insert(
+      at,
+      2,
       copyRows(sheetId, L.vatRateRow, L.vatAmountRow + 1, at),
       setText(sheetId, at, A, 'WITHHOLDING TAX RATE'),
       setText(sheetId, at + 1, E, 'WITHHOLDING'),
     );
   }
-  if (d.withholdingRate === 0 && L.whtRateRow != null) {
-    reqs.push(deleteRows(sheetId, L.whtRateRow, (L.whtAmountRow ?? L.whtRateRow) + 1));
-  }
+  if (d.withholdingRate === 0 && L.whtRateRow != null) remove(L.whtRateRow, (L.whtAmountRow ?? L.whtRateRow) + 1);
 
   if (d.irpfRate > 0 && L.irpfRow == null) throw new Error('Invoice template has no IRPF row');
-  if (d.irpfRate === 0 && L.irpfRow != null) reqs.push(deleteRows(sheetId, L.irpfRow, L.irpfRow + 1));
+  if (d.irpfRate === 0 && L.irpfRow != null) remove(L.irpfRow, L.irpfRow + 1);
 
   const clientHave = L.descriptionRow - 1 - L.clientRow;
-  if (d.clientLines.length > clientHave) reqs.push(insertRows(sheetId, L.descriptionRow - 1, d.clientLines.length - clientHave));
+  if (d.clientLines.length > clientHave) insert(L.descriptionRow - 1, d.clientLines.length - clientHave);
 
-  return reqs;
+  return ops
+    .sort((x, y) => y.at - x.at || (x.kind === y.kind ? 0 : x.kind === 'delete' ? -1 : 1))
+    .flatMap((op) => op.requests);
 }
 
 const pad = (lines: string[], n: number) => [...lines, ...Array<string>(Math.max(0, n - lines.length)).fill('')];
@@ -111,9 +124,13 @@ export function planValues(layout: Layout, grid: Grid, d: InvoiceDraft): { raw: 
     }),
   });
 
+  const hasWht = L.whtRateRow != null && L.whtAmountRow != null;
+  if ((d.withholdingRate > 0) !== hasWht) throw new Error('Sheet withholding rows do not match the invoice withholding rate');
+  if ((d.irpfRate > 0) !== (L.irpfRow != null)) throw new Error('Sheet IRPF row does not match the invoice IRPF rate');
+
   const dp = decimalsFor(d.currency);
   const sub = L.subtotalRow + 1;
-  entered.push({ range: `F${sub}`, values: [[`=SUM(F${itemStart + 1}:F${itemStart + itemCap})`]] });
+  entered.push({ range: `F${sub}`, values: [[`=ROUND(SUM(F${itemStart + 1}:F${itemStart + itemCap}),${dp})`]] });
 
   const minus: string[] = [];
   if (L.irpfRow != null) {
@@ -126,7 +143,6 @@ export function planValues(layout: Layout, grid: Grid, d: InvoiceDraft): { raw: 
   const va = L.vatAmountRow + 1;
   entered.push({ range: `F${vr}`, values: [[d.vatRate]] }, { range: `F${va}`, values: [[`=ROUND(F${sub}*F${vr},${dp})`]] });
 
-  const hasWht = L.whtRateRow != null && L.whtAmountRow != null;
   if (hasWht) {
     const wr = L.whtRateRow! + 1;
     const wa = L.whtAmountRow! + 1;

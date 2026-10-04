@@ -23,6 +23,13 @@ describe('taxRulesFor', () => {
     expect(t.notes).toEqual(['- Retención del IRPF del 15% conforme a la normativa vigente.']);
   });
 
+  it('Spain with IRPF 0%: no IRPF note', () => {
+    const t = taxRulesFor({ ...base, country: 'ES', serviceType: 'teaching' }, { ...DEFAULT_SETTINGS, irpfRate: 0 });
+    expect(t.irpfRate).toBe(0);
+    expect(t.notes).toEqual([NOTES.esExempt]);
+    expect(taxRulesFor({ ...base, country: 'ES', serviceType: 'other' }, { ...DEFAULT_SETTINGS, irpfRate: 0 }).notes).toEqual([]);
+  });
+
   it('EU (not Spain): reverse charge in EN + ES, warning without a VAT ID', () => {
     const ok = taxRulesFor({ ...base, country: 'FR', serviceType: 'teaching' }, DEFAULT_SETTINGS);
     expect(ok).toMatchObject({ vatRate: 0, irpfRate: 0, warnings: [] });

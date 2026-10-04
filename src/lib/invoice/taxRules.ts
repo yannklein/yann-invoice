@@ -44,9 +44,10 @@ export function taxRulesFor(input: TaxInput, settings: Settings): TaxResult {
 
   if (country === 'ES') {
     const irpfRate = settings.irpfRate;
+    const irpfNotes = irpfRate > 0 ? [irpfNote(irpfRate)] : [];
     return serviceType === 'teaching'
-      ? { ...base, vatRate: 0, irpfRate, notes: [NOTES.esExempt, irpfNote(irpfRate)] }
-      : { ...base, vatRate: 0.21, irpfRate, notes: [irpfNote(irpfRate)] };
+      ? { ...base, vatRate: 0, irpfRate, notes: [NOTES.esExempt, ...irpfNotes] }
+      : { ...base, vatRate: 0.21, irpfRate, notes: irpfNotes };
   }
   if (isEU(country)) {
     const warnings = hasTaxId(input.clientLines) ? [] : ["EU reverse charge needs the client's VAT ID in the client details."];

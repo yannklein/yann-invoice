@@ -41,6 +41,15 @@ describe('planStructure', () => {
     expect(reqs).toEqual([insert(37, 4), insert(32, 2), insert(11, 1)]);
   });
 
+  it('orders requests bottom-up even when the template has IRPF below the VAT rows', () => {
+    // move the IRPF row (index 23) below the VAT amount row: vatRate 23, vatAmount 24, irpf 25
+    const g = [...ES_202609003.slice(0, 23), ES_202609003[24], ES_202609003[25], ES_202609003[23], ...ES_202609003.slice(26)];
+    const reqs = planStructure(locate(g), g, draft({ irpfRate: 0, withholdingRate: 0.1021 }), SHEET);
+    expect(reqs[0]).toEqual({ deleteDimension: { range: { sheetId: SHEET, dimension: 'ROWS', startIndex: 25, endIndex: 26 } } });
+    expect(reqs[1]).toEqual(insert(25, 2));
+    expect(reqs[2]).toMatchObject({ copyPaste: { source: { startRowIndex: 23, endRowIndex: 25 }, destination: { startRowIndex: 25, endRowIndex: 27 } } });
+  });
+
   it('refuses a template without the IRPF row when IRPF is needed', () => {
     const noIrpf = ES_202609003.map((r, i) => (i === 23 ? ['', '', '', '', '', ''] : r));
     expect(() => planStructure(locate(noIrpf), noIrpf, draft(), SHEET)).toThrow(/IRPF/);
@@ -57,7 +66,7 @@ describe('planValues', () => {
     expect(find(raw, 'E8')).toEqual([['2026/10/04']]);
     expect(find(raw, 'A14:A22')?.[0]).toEqual(['Teaching']);
     expect(find(entered, 'D14:F22')?.slice(0, 2)).toEqual([[1, 100, '=D14*E14'], ['', '', '']]);
-    expect(find(entered, 'F23')).toEqual([['=SUM(F14:F22)']]);
+    expect(find(entered, 'F23')).toEqual([['=ROUND(SUM(F14:F22),2)']]);
     expect(find(raw, 'E24')).toEqual([['IRPF (7%)']]);
     expect(find(entered, 'F24')).toEqual([['=ROUND(F23*0.07,2)']]);
     expect(find(entered, 'F25')).toEqual([[0]]);
@@ -86,6 +95,13 @@ describe('planValues', () => {
     expect(find(entered, 'F28')).toEqual([['=ROUND(F23*F27,2)']]);
     expect(find(raw, 'A29')).toEqual([['TOTAL after withholding tax']]);
     expect(find(entered, 'F29')).toEqual([['=F23+F26-F24-F28']]);
+  });
+
+  it('refuses to fill a sheet whose tax rows do not match the draft', () => {
+    expect(() => planValues(L, ES_202609003, draft({ withholdingRate: 0.1021 }))).toThrow(/withholding/i);
+    expect(() => planValues(L, ES_202609003, draft({ irpfRate: 0 }))).toThrow(/IRPF/);
+    const noIrpf = ES_202609003.map((r, i) => (i === 23 ? ['', '', '', '', '', ''] : r));
+    expect(() => planValues(locate(noIrpf), noIrpf, draft())).toThrow(/IRPF/);
   });
 
   it('rejects more items than the template holds', () => {

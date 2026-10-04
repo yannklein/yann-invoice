@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { getGoogle } from '@/lib/google/client';
 import { requireIds } from '@/lib/google/drive';
 import { createInvoiceSheet } from '@/lib/google/writeInvoice';
-import { readSettings, syncIndex } from '@/lib/index/store';
+import { indexFile, readSettings } from '@/lib/index/store';
+import { sheetUrl } from '@/lib/invoice/pdf';
 import { draftSchema, toDraft, type DraftForm } from '@/lib/invoice/schema';
 
 export async function createInvoiceAction(form: DraftForm): Promise<{ error: string } | undefined> {
@@ -17,9 +18,15 @@ export async function createInvoiceAction(form: DraftForm): Promise<{ error: str
   try {
     const settings = await readSettings(g.sheets, ids.indexId);
     id = await createInvoiceSheet(g, ids, toDraft(parsed.data, settings));
-    await syncIndex(g, ids);
   } catch (e) {
     return { error: `Could not create the invoice: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  // The sheet exists from here on: never report failure, or a retry would create a duplicate.
+  try {
+    await indexFile(g, ids, id);
+  } catch (e) {
+    console.error(`[create] invoice ${id} created but not indexed yet`, e);
+    redirect(sheetUrl(id)); // the next sync will index it
   }
   redirect(`/invoices/${id}`);
 }

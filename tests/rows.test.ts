@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffFiles, metaFromAppProperties, rowToValues, settingsFromValues, settingsToValues, valuesToRow } from '@/lib/index/rows';
+import { diffFiles, mergeSync, metaFromAppProperties, rowToValues, settingsFromForm, settingsFromValues, settingsToValues, upsertRow, valuesToRow } from '@/lib/index/rows';
 import { parseInvoice } from '@/lib/invoice/parse';
 import type { IndexRow } from '@/lib/invoice/derive';
 import { ES_202609003 } from './fixtures/grids';
@@ -49,5 +49,40 @@ describe('diffFiles', () => {
   });
   it('full mode re-parses everything', () => {
     expect(diffFiles(files, [row('a', 'm1')], true).toParse).toHaveLength(3);
+  });
+});
+
+describe('mergeSync', () => {
+  const file = (id: string, modifiedTime: string) => ({ id, name: id, modifiedTime, appProperties: {} });
+  it('keeps the previous row of a file that could not be read, and counts it', () => {
+    const prev = [row('a', 'm1'), row('b', 'old')];
+    const out = mergeSync(prev, [prev[0]], [{ file: file('b', 'new'), row: null }, { file: file('c', 'm3'), row: null }]);
+    expect(out.rows.map((r) => [r.fileId, r.modifiedTime])).toEqual(expect.arrayContaining([['a', 'm1'], ['b', 'old']]));
+    expect(out.rows).toHaveLength(2);
+    expect(out.failed).toEqual(['b', 'c']);
+  });
+  it('uses freshly parsed rows when reads succeed', () => {
+    const out = mergeSync([row('a', 'old')], [], [{ file: file('a', 'new'), row: row('a', 'new') }]);
+    expect(out.rows.map((r) => r.modifiedTime)).toEqual(['new']);
+    expect(out.failed).toEqual([]);
+  });
+});
+
+describe('upsertRow', () => {
+  it('replaces a row with the same file id, or adds it', () => {
+    expect(upsertRow([row('a', 'm1'), row('b', 'm2')], row('a', 'm9')).map((r) => [r.fileId, r.modifiedTime])).toEqual(
+      expect.arrayContaining([['a', 'm9'], ['b', 'm2']]),
+    );
+    expect(upsertRow([row('a', 'm1')], row('c', 'm3'))).toHaveLength(2);
+  });
+});
+
+describe('settingsFromForm', () => {
+  it('converts a percent and rejects empty or out-of-range input', () => {
+    expect(settingsFromForm('7', 'Due upon receipt')).toEqual({ irpfRate: 0.07, defaultTerms: 'Due upon receipt' });
+    expect(settingsFromForm('15', ' Net 30 ')).toEqual({ irpfRate: 0.15, defaultTerms: 'Net 30' });
+    expect(settingsFromForm('', 'x')).toBeNull();
+    expect(settingsFromForm('-1', 'x')).toBeNull();
+    expect(settingsFromForm('7', ' ')).toBeNull();
   });
 });
