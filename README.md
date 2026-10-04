@@ -33,3 +33,10 @@ moves every `Invoice …` sheet into it (links keep working), creates `Invoice T
 202609003) and `Invoice Index`, then indexes everything (about 1 minute).
 
 To change your sender details (address, Tax ID), edit `Invoice Template` in Google Sheets.
+
+## Deploy (Coolify)
+
+1. Push this repo to GitHub (private).
+2. Coolify → New resource → this repo → Build pack **Dockerfile**, port 3000, domain `invoice.yannklein.dev`.
+3. Environment: `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ALLOWED_EMAIL`, `AUTH_TRUST_HOST=true`, `AUTH_URL=https://invoice.yannklein.dev`.
+4. Deploy. Confirm `https://invoice.yannklein.dev/api/auth/callback/google` is listed in the OAuth client's redirect URIs.
