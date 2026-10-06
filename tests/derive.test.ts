@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bankLabel, clientKey, deriveBanks, deriveClients, effectiveServiceType, sortNewest, type IndexRow } from '@/lib/invoice/derive';
+import { bankLabel, clientKey, deriveBanks, deriveClients, effectiveServiceType, parseSort, sortNewest, sortRows, type IndexRow } from '@/lib/invoice/derive';
 import { parseInvoice } from '@/lib/invoice/parse';
 import { ES_202609003, FR_LALOCO_202601001, JP_MATINNO_202606004 } from './fixtures/grids';
 
@@ -44,6 +44,43 @@ describe('effectiveServiceType', () => {
 describe('sortNewest', () => {
   it('sorts by issue date, then number, descending', () => {
     expect(sortNewest([esOld, jp, es]).map((r) => r.fileId)).toEqual(['es', 'jp', 'es-old']);
+  });
+});
+
+describe('parseSort', () => {
+  it('defaults to newest date first and rejects unknown values', () => {
+    expect(parseSort()).toEqual({ key: 'date', dir: 'desc' });
+    expect(parseSort('bogus', 'sideways')).toEqual({ key: 'date', dir: 'desc' });
+    expect(parseSort('client')).toEqual({ key: 'client', dir: 'asc' });
+    expect(parseSort('total', 'asc')).toEqual({ key: 'total', dir: 'asc' });
+  });
+});
+
+describe('sortRows', () => {
+  const ids = (rows: IndexRow[]) => rows.map((r) => r.fileId);
+  const noNumber = row('none', ES_202609003, 'Draft', { number: null, total: null, clientName: '' });
+
+  it('sorts each column both ways', () => {
+    expect(ids(sortRows([esOld, jp, es], { key: 'date', dir: 'desc' }))).toEqual(['es', 'jp', 'es-old']);
+    expect(ids(sortRows([esOld, jp, es], { key: 'date', dir: 'asc' }))).toEqual(['es-old', 'jp', 'es']);
+    expect(ids(sortRows([es, jp, esOld], { key: 'number', dir: 'asc' }))).toEqual(['es-old', 'jp', 'es']);
+    expect(ids(sortRows([es, fr, jp], { key: 'client', dir: 'asc' }))).toEqual(['fr', 'es', 'jp']);
+    expect(ids(sortRows([es, fr, jp], { key: 'client', dir: 'desc' }))).toEqual(['jp', 'es', 'fr']);
+  });
+
+  it('groups totals by currency', () => {
+    const big = row('big', ES_202609003, 'big', { total: 9999 });
+    const small = row('small', ES_202609003, 'small', { total: 1 });
+    const yen = row('yen', ES_202609003, 'yen', { total: 500000, currency: 'JPY' });
+    expect(ids(sortRows([yen, small, big], { key: 'total', dir: 'desc' }))).toEqual(['big', 'small', 'yen']);
+    expect(ids(sortRows([yen, big, small], { key: 'total', dir: 'asc' }))).toEqual(['small', 'big', 'yen']);
+  });
+
+  it('keeps missing values last in both directions', () => {
+    for (const key of ['number', 'client', 'total'] as const) {
+      expect(sortRows([noNumber, es], { key, dir: 'asc' }).at(-1)!.fileId).toBe('none');
+      expect(sortRows([noNumber, es], { key, dir: 'desc' }).at(-1)!.fileId).toBe('none');
+    }
   });
 });
 
