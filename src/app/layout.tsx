@@ -15,6 +15,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <header className="border-b border-foreground/10">
           <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-4">
             <Link href="/" className="mr-2 text-xl font-black tracking-tight">yann·invoice</Link>
+            <Link href="/dashboard" className={navLink}>Dashboard</Link>
             <Link href="/" className={navLink}>Invoices</Link>
             <Link href="/invoices/new" className={navLink}>New invoice</Link>
             <Link href="/shared" className={navLink}>Shared account</Link>

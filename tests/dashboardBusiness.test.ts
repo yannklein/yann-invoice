@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byClient, byCountry, byService, paymentDelay, revenueByMonth, revenueEntries, shareBy, skippedIn, unpaid } from '@/lib/dashboard/business';
+import { byClient, byCountry, byService, paymentDelay, revenueByMonth, revenueEntries, shareBy, skippedIn, unpaid, unpaidFrom } from '@/lib/dashboard/business';
 import { periodMonths } from '@/lib/dashboard/period';
 import { FX, inv, line } from './fixtures/dashboard';
 
@@ -59,7 +59,7 @@ describe('shareBy', () => {
 });
 
 describe('unpaid', () => {
-  it('lists unlinked JPY/EUR invoices since 2025-07, oldest first, with a total in the display currency', () => {
+  it('lists unlinked JPY/EUR invoices in the tracking window, oldest first, with a total in the display currency', () => {
     const list = [
       inv('old', { number: '202506001' }),
       inv('usd', { number: '202608009', currency: 'USD', total: 120 }),
@@ -74,6 +74,21 @@ describe('unpaid', () => {
     expect(u.rows.map((r) => [r.fileId, r.month, r.ageMonths])).toEqual([['c', '2026-08', 2], ['a', '2026-09', 1], ['future', '2026-12', 0]]);
     expect(u.rows[0]).toEqual({ fileId: 'c', number: '202608001', client: 'LWB', month: '2026-08', total: 465, currency: 'EUR', ageMonths: 2 });
     expect(u.total).toBe(3015);
+    expect(u.from).toBe('2026-07');
+  });
+  it('starts 3 months before the first month with a linked invoice, ignoring imported lines without links', () => {
+    const lines = [
+      line({ month: '2025-10', kind: 'income', label: 'Matinno' }),
+      line({ month: '2026-09', kind: 'income', invoiceId: 'x' }),
+      line({ month: '2026-10', kind: 'income', invoiceId: 'y' }),
+    ];
+    expect(unpaidFrom(lines, '2026-10')).toBe('2026-06');
+    const list = [inv('may', { number: '202605001' }), inv('jun', { number: '202606001' })];
+    expect(unpaid(list, lines, '2026-10', 'EUR', FX).rows.map((r) => r.fileId)).toEqual(['jun']);
+  });
+  it('falls back to the picker window (now − 3) before any invoice was linked', () => {
+    expect(unpaidFrom([line({ month: '2025-10', kind: 'income', label: 'LWB' })], '2026-10')).toBe('2026-07');
+    expect(unpaidFrom([], '2026-10')).toBe('2026-07');
   });
 });
 

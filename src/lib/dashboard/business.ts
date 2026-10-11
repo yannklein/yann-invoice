@@ -100,8 +100,14 @@ export function revenueByMonth(entries: RevenueEntry[], months: string[], ccy: D
   return { series, months: points, total, previousTotal, changePct: previousTotal ? (total - previousTotal) / previousTotal : null };
 }
 
-/** The first month whose invoices could be ticked in /shared (its first month, 2025-10, minus the 3-month window). */
-export const UNPAID_FROM = '2025-07';
+/**
+ * First invoice month tracked as unpaid: 3 months (the /shared picker window) before the first month that links an
+ * invoice. Months imported from the legacy tabs carry no links, so they would otherwise flag everything as unpaid.
+ */
+export function unpaidFrom(lines: Line[], now: string): string {
+  const linked = lines.filter((l) => l.kind === 'income' && l.invoiceId).map((l) => l.month).sort()[0];
+  return addMonths(linked && linked < now ? linked : now, -3);
+}
 
 export interface UnpaidRow {
   fileId: string;
@@ -113,18 +119,19 @@ export interface UnpaidRow {
   ageMonths: number;
 }
 
-/** JPY/EUR invoices since UNPAID_FROM that no shared income line links to, oldest first. */
-export function unpaid(rows: IndexRow[], lines: Line[], now: string, ccy: DisplayCurrency, fx: Fx): { rows: UnpaidRow[]; total: number } {
+/** JPY/EUR invoices since `unpaidFrom` that no shared income line links to, oldest first. */
+export function unpaid(rows: IndexRow[], lines: Line[], now: string, ccy: DisplayCurrency, fx: Fx): { rows: UnpaidRow[]; total: number; from: string } {
+  const from = unpaidFrom(lines, now);
   const linked = new Set(lines.map((l) => l.invoiceId).filter(Boolean));
   const out = rows
     .flatMap((r): UnpaidRow[] => {
       const { total, currency } = r.invoice;
       const month = invoiceMonth(r);
-      if (total == null || (currency !== 'JPY' && currency !== 'EUR') || month < UNPAID_FROM || linked.has(r.fileId)) return [];
+      if (total == null || (currency !== 'JPY' && currency !== 'EUR') || month < from || linked.has(r.fileId)) return [];
       return [{ fileId: r.fileId, number: r.invoice.number ?? r.title, client: r.invoice.clientName, month, total, currency, ageMonths: Math.max(0, monthDiff(month, now)) }];
     })
     .sort((a, b) => a.month.localeCompare(b.month) || a.number.localeCompare(b.number));
-  return { rows: out, total: sum(out.map((u) => convert(u.total, u.currency, ccy, now, fx)), ccy) };
+  return { rows: out, total: sum(out.map((u) => convert(u.total, u.currency, ccy, now, fx)), ccy), from };
 }
 
 export interface DelayRow {

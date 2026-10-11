@@ -30,7 +30,7 @@ describe('fetchMonthlyRates', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('requests the range and parses it', async () => {
-    const f = vi.fn(async (_url: string) => new Response(JSON.stringify({ rates: { '2026-10-01': { JPY: 175, USD: 1.17 } } })));
+    const f = vi.fn<(url: string) => Promise<Response>>(async () => new Response(JSON.stringify({ rates: { '2026-10-01': { JPY: 175, USD: 1.17 } } })));
     vi.stubGlobal('fetch', f);
     expect(await fetchMonthlyRates('2025-01', '2026-10-12')).toEqual({ '2026-10': { JPY: 175, USD: 1.17 } });
     expect(f.mock.calls[0][0]).toBe('https://api.frankfurter.dev/v1/2025-01-01..2026-10-12?from=EUR&to=JPY,USD');
