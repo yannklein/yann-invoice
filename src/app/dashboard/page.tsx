@@ -4,13 +4,17 @@ import { byClient, byCountry, byService, paymentDelay, revenueByMonth, revenueEn
 import { buildFx } from '@/lib/dashboard/convert';
 import { delayLabel, money, monthShort, percent, signedPercent } from '@/lib/dashboard/format';
 import { parseCcy, parsePeriod, periodLabel, periodMonths, periodParam, todayDate, yearOptions } from '@/lib/dashboard/period';
+import { expenseBreakdown, incomeByCurrency, monthTransfer, transfers } from '@/lib/dashboard/household';
 import { fetchMonthlyRates } from '@/lib/fx/history';
 import { getGoogle } from '@/lib/google/client';
 import { requireIds } from '@/lib/google/drive';
 import { syncIndex } from '@/lib/index/store';
 import { currentMonth, invoiceMonth, monthLabel } from '@/lib/shared/model';
 import { findSharedId, readShared } from '@/lib/shared/store';
+import { ExpenseChart } from './charts/ExpenseChart';
+import { IncomeCurrencyChart } from './charts/IncomeCurrencyChart';
 import { RevenueChart } from './charts/RevenueChart';
+import { TransferChart } from './charts/TransferChart';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -39,6 +43,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const skipped = skippedIn(rows, months, 'subtotal');
   const open = shared ? unpaid(rows, shared.lines, now, ccy, fx) : null;
   const delays = shared ? paymentDelay(rows, shared.lines) : [];
+  const household = shared && {
+    transfers: transfers(shared.months, shared.lines, ccy),
+    expenses: expenseBreakdown(shared.months, shared.lines, ccy),
+    income: incomeByCurrency(shared.months, shared.lines, ccy),
+    thisMonth: monthTransfer(shared.months, shared.lines, now, ccy),
+  };
 
   return (
     <div className="space-y-10">
@@ -77,6 +87,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           label="Unpaid"
           value={open ? money(open.total, ccy) : '—'}
           sub={open ? plural(open.rows.length, 'invoice') : 'shared account not imported'}
+        />
+        <Stat
+          label="Transfer this month"
+          value={household?.thisMonth != null ? money(household.thisMonth, ccy) : '—'}
+          warn={household?.thisMonth != null && household.thisMonth < 0}
+          sub={!household ? 'shared account not imported' : household.thisMonth != null ? monthLabel(now) : <Link className="underline" href="/shared">not saved yet</Link>}
         />
       </div>
 
@@ -126,6 +142,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <ShareBars rows={shareBy(entries, months, ccy, byService)} ccy={ccy} />
           </Panel>
         </div>
+      </Section>
+
+      <Section title="Household">
+        {!household ? (
+          <NotImported />
+        ) : !household.transfers.points.length ? (
+          <Empty>No saved months yet</Empty>
+        ) : (
+          <>
+            <Panel title="Transfer per month">
+              <TransferChart points={household.transfers.points} average={household.transfers.average} ccy={ccy} />
+              <p className="mt-2 text-xs text-foreground/50">Red bars: months where expenses were larger than income. Dashed line: average.</p>
+            </Panel>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Panel title="Expenses">
+                <ExpenseChart points={household.expenses} ccy={ccy} />
+              </Panel>
+              <Panel title="Income by currency">
+                <IncomeCurrencyChart points={household.income} ccy={ccy} />
+              </Panel>
+            </div>
+          </>
+        )}
       </Section>
     </div>
   );
