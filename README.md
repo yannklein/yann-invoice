@@ -43,6 +43,13 @@ each month). Totals are in ¥ and €, using that month's JPY/EUR rate (default:
 Data lives in the **Shared account money** sheet, tabs `Months` and `Lines`. Import it once from Settings → Shared
 account: the old monthly tabs are converted (EUR is recovered from their `… * I1 / 1000` formulas) and left untouched.
 
+## Dashboard
+
+`/dashboard` charts what the app already knows: revenue by client, unpaid invoices (tracked from 3 months before the first
+month that links an invoice in `/shared`), quarterly VAT / IRPF / foreign withholding for Modelo 303/130 prep, and the
+shared account's transfers and expenses. Amounts in other currencies use each month's ECB average (frankfurter.dev, cached
+a day); switch € / ¥ and the period at the top. Expense categories come from keyword rules in `src/lib/dashboard/household.ts`.
+
 ## Deploy (Coolify)
 
 1. Push this repo to GitHub (private).
