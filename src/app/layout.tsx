@@ -17,6 +17,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/" className="mr-2 text-xl font-black tracking-tight">yann·invoice</Link>
             <Link href="/" className={navLink}>Invoices</Link>
             <Link href="/invoices/new" className={navLink}>New invoice</Link>
+            <Link href="/shared" className={navLink}>Shared account</Link>
             <Link href="/settings" className={navLink}>Settings</Link>
             {session?.user && (
               <form
