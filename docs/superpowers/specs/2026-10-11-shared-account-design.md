@@ -78,7 +78,7 @@ Re-importing replaces both tabs, and the preview says so.
 
 - `?m=YYYY-MM`, defaulting to the current calendar month. Prev/next arrows sit next to a list of saved months.
 - **Saved month:** loads its `Months` and `Lines` rows.
-- **New month** (shown with a "Draft — not saved" badge): the lines are `carryForward` of the latest saved month before it. The FX rate is today's EUR→JPY from `https://api.frankfurter.app/latest?from=EUR&to=JPY` (server fetch, 3 s timeout, revalidated hourly), falling back to the previous month's rate.
+- **New month** (shown with a "Draft — not saved" badge): the lines are `carryForward` of the latest saved month before it. The FX rate is today's EUR→JPY from `https://api.frankfurter.dev/v1/latest?from=EUR&to=JPY` (server fetch, 3 s timeout, revalidated hourly), falling back to the previous month's rate.
 - **Received from invoices:** a checklist of `candidateInvoices` showing number, client, date and total. Ticking one adds an income line; unticking removes the line linked to it.
 - **Income** and **Expenses** tables: editable label, amount and currency; add and delete rows. Expense rows can be turned into instalments (total, N, current index). Instalment rows show `2/3 · 2 598 € total`.
 - **FX rate** input (JPY per EUR) and a month note.

@@ -53,14 +53,13 @@ export function SharedMonthForm({ initial, saved, updatedAt, fxSource, candidate
     fx,
   );
 
-  // Warn before leaving with unsaved edits (a draft month counts as unsaved).
-  const unsaved = isDirty || !saved;
+  // Warn before closing the tab with unsaved edits.
   useEffect(() => {
-    if (!unsaved) return;
+    if (!isDirty) return;
     const onLeave = (e: BeforeUnloadEvent) => e.preventDefault();
     window.addEventListener('beforeunload', onLeave);
     return () => window.removeEventListener('beforeunload', onLeave);
-  }, [unsaved]);
+  }, [isDirty]);
 
   function toggleInvoice(c: Candidate) {
     const i = getValues('lines').findIndex((l) => l.invoiceId === c.fileId);

@@ -34,6 +34,15 @@ moves every `Invoice …` sheet into it (links keep working), creates `Invoice T
 
 To change your sender details (address, Tax ID), edit `Invoice Template` in Google Sheets.
 
+## Shared account (monthly transfer)
+
+`/shared` works out how much goes to the shared account each month: income received (tick the invoices that reached
+the bank, or add lines) minus expenses (copied from the previous month; instalments like `2598 € ÷ 3` move on by one
+each month). Totals are in ¥ and €, using that month's JPY/EUR rate (default: today's ECB rate).
+
+Data lives in the **Shared account money** sheet, tabs `Months` and `Lines`. Import it once from Settings → Shared
+account: the old monthly tabs are converted (EUR is recovered from their `… * I1 / 1000` formulas) and left untouched.
+
 ## Deploy (Coolify)
 
 1. Push this repo to GitHub (private).
