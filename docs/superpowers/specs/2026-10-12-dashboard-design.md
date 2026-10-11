@@ -13,7 +13,7 @@ The app holds two kinds of data that are never shown as a whole:
 - One page, all charts, built in three phases.
 - A **€ / ¥ toggle**. Amounts in other currencies are converted at **each month's ECB rate**, not today's.
 - A **period selector**: "Last 12 months" (default) or one calendar year.
-- Charts use the **shadcn Chart component (Recharts)** with the existing `--chart-1…5` colours.
+- Charts use the **shadcn Chart component (Recharts)**. The existing `--chart-1…5` tokens fail the colour checks on the dark background (too dark, low chroma, contrast < 3:1), so they are replaced by brighter steps of similar hues, validated with the dataviz palette script against `#14161d`: `#1f9e94` teal, `#c08a1e` amber, `#4a8fe0` blue, `#e0608d` pink, `#8a80e8` violet. Three more tokens are added: `--chart-other: #7c7b78` (the "Other" series), `--chart-muted: rgb(240 237 232 / 0.35)` (reference lines) and `--chart-gap: #12141c` (the 2px gap between stacked segments). The tokens are not used anywhere else in the app.
 - No "rate per teaching hour" chart. Invoices bill lump sums (quantity `1.00`), so there are no hours to divide by.
 - Expenses are grouped by **keyword rules in code**. The sheet does not get a category column.
 
@@ -47,8 +47,8 @@ The year options run from the year of the oldest invoice to the current year.
    - `syncIndex`
    - `findSharedId` + `readShared` (this part is skipped when the sheet isn't imported)
    - `monthlyRates(from, to)`
-2. Pure functions in `src/lib/dashboard/` build one serialisable `DashboardData` object.
-3. Client chart components in `src/app/dashboard/charts/` receive slices of that object and only draw. They do no maths.
+2. Pure functions in `src/lib/dashboard/` compute each chart's data as plain, serialisable objects.
+3. Client chart components in `src/app/dashboard/charts/` receive those objects and only draw. They do no maths.
 
 ### Monthly rates (`src/lib/fx/history.ts`)
 
@@ -56,7 +56,7 @@ The year options run from the year of the oldest invoice to the current year.
 - `parseMonthlyRates(json)` (pure) averages the daily rates per `YYYY-MM` → `Record<month, { JPY, USD }>`.
 - `rateFor(rates, month)` uses that month's rate, or else the closest earlier month that has one.
 - **Fallback when the request fails:**
-  - For JPY, use the shared `Months.fxJpyPerEur` of that month when it exists. Otherwise use 177, the same default as `/shared`.
+  - For JPY, use the shared `Months.fxJpyPerEur` of that month, or of the closest earlier saved month. Before the first saved month, use 177, the same default as `/shared`.
   - For USD, use 1.1.
   - Either way, show a banner: "Exchange rates unavailable — converted amounts are approximate."
 
@@ -143,8 +143,9 @@ This section shows the full shared history and ignores the period selector. Each
 | `src/lib/dashboard/business.ts` | Revenue by month, client share, unpaid, payment delay, splits |
 | `src/lib/dashboard/tax.ts` | Quarter rows, due dates, next filing, instalments |
 | `src/lib/dashboard/household.ts` | Transfers, `expenseCategory`, expense breakdown, income by currency |
-| `src/lib/dashboard/types.ts` | `DashboardData` and the per-chart slices |
+| `src/lib/dashboard/format.ts` | Money, compact axis labels, month and date labels, percentages |
 | `src/app/dashboard/page.tsx` | Server page: loads data, assembles `DashboardData`, lays out sections |
+| `src/app/dashboard/ui.tsx` | Server building blocks: `Section`, `Panel`, `Stat`, `Pill`, `ShareBars`, `Empty`, `NotImported` |
 | `src/app/dashboard/charts/*.tsx` | Client chart components (shadcn `ChartContainer`) |
 | `src/components/ui/chart.tsx` | Added via `npx shadcn add chart` (brings `recharts`) |
 | `src/app/layout.tsx` | Nav link |
@@ -175,7 +176,7 @@ Each phase is a working page with its own tests and commit(s).
     - transfer per month matches `totals()`;
     - the instalment remainder.
 - **Manual, in `npm run dev`:**
-  - Check the page in both light and dark mode and at phone width, and switch between `12m` and 2025.
+  - The app is dark-only (`<html className="dark">`). Check the page at desktop and phone width, and switch between `12m` and 2025.
   - Toggle € / ¥.
   - Cross-check one month's revenue and Q3 2026's VAT/IRPF against the invoice sheets by hand.
   - Block `api.frankfurter.dev` and confirm the fallback banner appears.
