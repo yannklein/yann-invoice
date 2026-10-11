@@ -1,6 +1,7 @@
 import type { drive_v3, sheets_v4 } from 'googleapis';
 import { findByRole, listAll, ROLE_KEY } from '@/lib/google/drive';
 import { importLegacy, type ImportResult, type LegacyTab } from './importLegacy';
+export { parseSheetId } from './rows';
 import { LINES_HEADER, lineToValues, MONTHS_HEADER, monthToValues, padRows, replaceMonthRows, valuesToLine, valuesToMonth } from './rows';
 import type { Line, MonthRecord } from './types';
 
@@ -54,12 +55,6 @@ export async function saveMonth(sheets: sheets_v4.Sheets, id: string, rec: Month
       ],
     },
   });
-}
-
-export function parseSheetId(input: string): string | null {
-  const s = input.trim();
-  const m = s.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]{20,})/) ?? s.match(/^([A-Za-z0-9_-]{20,})$/);
-  return m?.[1] ?? null;
 }
 
 export interface ImportPreview extends ImportResult {

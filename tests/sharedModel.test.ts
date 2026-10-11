@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IndexRow } from '@/lib/invoice/derive';
 import type { ParsedInvoice } from '@/lib/invoice/types';
-import { addMonths, candidateInvoices, carryForward, incomeFromInvoice, invoiceMonth, totals } from '@/lib/shared/model';
+import { addMonths, candidateInvoices, carryForward, currentMonth, incomeFromInvoice, invoiceMonth, monthLabel, totals } from '@/lib/shared/model';
 import type { Line } from '@/lib/shared/types';
 
 const line = (p: Partial<Line>): Line => ({
@@ -26,6 +26,13 @@ describe('addMonths', () => {
     expect(addMonths('2026-12', 1)).toBe('2027-01');
     expect(addMonths('2026-01', -3)).toBe('2025-10');
   });
+});
+
+describe('currentMonth / monthLabel', () => {
+  it('uses Barcelona time (UTC 23:30 on Sep 30 is already October there)', () => {
+    expect(currentMonth(new Date('2026-09-30T23:30:00Z'))).toBe('2026-10');
+  });
+  it('formats a month name', () => expect(monthLabel('2026-10')).toBe('October 2026'));
 });
 
 describe('totals', () => {

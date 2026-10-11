@@ -7,6 +7,8 @@ import { requireIds } from '@/lib/google/drive';
 import { settingsFromForm } from '@/lib/index/rows';
 import { syncIndex, writeSettings } from '@/lib/index/store';
 import { runSetup } from '@/lib/setup';
+import { currentMonth } from '@/lib/shared/model';
+import { parseSheetId, runImport } from '@/lib/shared/store';
 
 export async function runSetupAction() {
   const g = await getGoogle();
@@ -29,4 +31,18 @@ export async function fullResyncAction() {
   await syncIndex(g, await requireIds(g), { full: true });
   revalidatePath('/');
   redirect('/');
+}
+
+export async function previewSharedImportAction(formData: FormData) {
+  const id = parseSheetId(String(formData.get('sheet') ?? ''));
+  redirect(id ? `/settings?shared=${id}#shared` : '/settings?sharedError=1#shared');
+}
+
+export async function runSharedImportAction(formData: FormData) {
+  const id = parseSheetId(String(formData.get('sheet') ?? ''));
+  if (!id) redirect('/settings?sharedError=1#shared');
+  const g = await getGoogle();
+  await runImport(g, id, currentMonth());
+  revalidatePath('/shared');
+  redirect('/shared');
 }

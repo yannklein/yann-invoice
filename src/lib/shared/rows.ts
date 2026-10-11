@@ -58,3 +58,10 @@ export function padRows(rows: unknown[][], previousCount: number, width: number)
   const blanks = Array.from({ length: Math.max(0, previousCount - rows.length) }, () => Array<unknown>(width).fill(''));
   return [...rows, ...blanks];
 }
+
+/** Spreadsheet id from a docs.google.com URL or a bare id. */
+export function parseSheetId(input: string): string | null {
+  const s = input.trim();
+  const m = s.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]{20,})/) ?? s.match(/^([A-Za-z0-9_-]{20,})$/);
+  return m?.[1] ?? null;
+}

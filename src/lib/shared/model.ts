@@ -89,3 +89,10 @@ export function incomeFromInvoice(r: IndexRow, month: string): Line {
     note: '',
   };
 }
+
+/** The calendar month in Barcelona. */
+export const currentMonth = (now = new Date()) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit' }).format(now).slice(0, 7);
+
+export const monthLabel = (month: string) =>
+  new Date(`${month}-01T00:00:00Z`).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });

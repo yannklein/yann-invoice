@@ -7,8 +7,10 @@ import { resolveIds } from '@/lib/google/drive';
 import { readSettings } from '@/lib/index/store';
 import { previewSetup } from '@/lib/setup';
 import { fullResyncAction, runSetupAction, saveSettingsAction } from './actions';
+import { SharedImportCard } from './SharedImportCard';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ shared?: string; sharedError?: string }> }) {
+  const { shared, sharedError } = await searchParams;
   const g = await getGoogle();
   const ids = await resolveIds(g.drive);
 
@@ -56,6 +58,7 @@ export default async function SettingsPage() {
           <form action={fullResyncAction}><Button variant="outline" type="submit">Full resync (≈1 min)</Button></form>
         </CardContent>
       </Card>
+      <SharedImportCard g={g} previewParam={shared} inputError={!!sharedError} />
     </div>
   );
 }

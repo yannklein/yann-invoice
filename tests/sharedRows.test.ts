@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lineToValues, monthToValues, padRows, replaceMonthRows, valuesToLine, valuesToMonth } from '@/lib/shared/rows';
+import { lineToValues, monthToValues, padRows, parseSheetId, replaceMonthRows, valuesToLine, valuesToMonth } from '@/lib/shared/rows';
 import type { Line, MonthRecord } from '@/lib/shared/types';
 
 const line = (p: Partial<Line>): Line => ({
@@ -53,5 +53,17 @@ describe('padRows', () => {
   it('adds blank rows so a single update overwrites stale rows', () => {
     expect(padRows([['a', 'b']], 3, 2)).toEqual([['a', 'b'], ['', ''], ['', '']]);
     expect(padRows([['a', 'b']], 0, 2)).toEqual([['a', 'b']]);
+  });
+});
+
+describe('parseSheetId', () => {
+  const id = '13AMIrh2BkBSoRQPQaBGWeACFsptYDW4_k9PoT8FtTt8';
+  it('accepts a full URL or a bare id', () => {
+    expect(parseSheetId(`https://docs.google.com/spreadsheets/d/${id}/edit?gid=0#gid=0`)).toBe(id);
+    expect(parseSheetId(` ${id} `)).toBe(id);
+  });
+  it('rejects anything else', () => {
+    expect(parseSheetId('hello')).toBeNull();
+    expect(parseSheetId(`${id}/../x`)).toBeNull();
   });
 });
