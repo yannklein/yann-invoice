@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lineToValues, monthToValues, padRows, replaceMonth, upsertMonth, valuesToLine, valuesToMonth } from '@/lib/shared/rows';
+import { lineToValues, monthToValues, padRows, replaceMonthRows, valuesToLine, valuesToMonth } from '@/lib/shared/rows';
 import type { Line, MonthRecord } from '@/lib/shared/types';
 
 const line = (p: Partial<Line>): Line => ({
@@ -38,20 +38,14 @@ describe('month values', () => {
   it('rejects a missing rate', () => expect(valuesToMonth(['2026-10', '', '', ''])).toBeNull());
 });
 
-describe('replaceMonth', () => {
-  const all = [line({ month: '2026-08', label: 'a' }), line({ month: '2026-09', label: 'b' }), line({ month: '2026-09', label: 'c' })];
-  it('replaces only that month and keeps months sorted', () => {
-    expect(replaceMonth(all, '2026-09', [line({ month: '2026-09', label: 'd' })]).map((l) => l.label)).toEqual(['a', 'd']);
-    expect(replaceMonth(all, '2026-07', [line({ month: '2026-07', label: 'z' })]).map((l) => l.label)).toEqual(['z', 'a', 'b', 'c']);
+describe('replaceMonthRows', () => {
+  const all = [['2026-08', 'a'], ['2026-09', 'b'], ['garbage', 'kept'], ['2026-09', 'c']];
+  it('replaces only that month, keeps months sorted and unparseable rows untouched', () => {
+    expect(replaceMonthRows(all, '2026-09', [['2026-09', 'd']])).toEqual([['2026-08', 'a'], ['2026-09', 'd'], ['garbage', 'kept']]);
+    expect(replaceMonthRows(all, '2026-07', [['2026-07', 'z']]).map((r) => r[1])).toEqual(['z', 'a', 'b', 'c', 'kept']);
   });
-});
-
-describe('upsertMonth', () => {
-  const a: MonthRecord = { month: '2026-09', fxJpyPerEur: 185, note: '', updatedAt: 'x' };
-  it('inserts sorted and replaces existing', () => {
-    const b = { ...a, month: '2026-08' };
-    expect(upsertMonth([a], b).map((m) => m.month)).toEqual(['2026-08', '2026-09']);
-    expect(upsertMonth([a, b], { ...a, fxJpyPerEur: 1 }).find((m) => m.month === '2026-09')?.fxJpyPerEur).toBe(1);
+  it('treats Sheets numbers and strings in column A alike', () => {
+    expect(replaceMonthRows([[' 2026-09 ', 'old']], '2026-09', [])).toEqual([]);
   });
 });
 

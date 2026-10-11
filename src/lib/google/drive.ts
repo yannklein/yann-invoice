@@ -7,7 +7,7 @@ import type { Google } from './client';
 export const ROLE_KEY = 'yannInvoiceRole';
 export const SHEET_MIME = 'application/vnd.google-apps.spreadsheet';
 export const FOLDER_MIME = 'application/vnd.google-apps.folder';
-export type Role = 'folder' | 'index' | 'template' | 'invoice';
+export type Role = 'folder' | 'index' | 'template' | 'invoice' | 'shared';
 
 export interface AppIds {
   folderId: string;

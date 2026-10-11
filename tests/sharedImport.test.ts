@@ -33,10 +33,10 @@ describe('parseCell', () => {
   });
   it('keeps non-trivial formulas as a note', () => {
     expect(parseCell('= 1000 * I1 /1000 /2', 92.1, 184.2)).toEqual({ amount: 500, currency: 'EUR', inst: null, note: '= 1000 * I1 /1000 /2' });
-    expect(parseCell('=(200) * I1 /1000', 37.066, 185.33).note).toBe('');
+    expect(parseCell('=(200) * I1 /1000', 37.066, 185.33)!.note).toBe('');
   });
   it('accepts comma decimals in formulas', () => {
-    expect(parseCell('=2598,5/3*I1/1000', 160.5266, 185.33).inst).toEqual({ total: 2598.5, index: 1, count: 3 });
+    expect(parseCell('=2598,5/3*I1/1000', 160.5266, 185.33)!.inst).toEqual({ total: 2598.5, index: 1, count: 3 });
   });
   it('returns null for zero, empty and text cells', () => {
     expect(parseCell('=0 *I1/1000', 0, 185.33)).toBeNull();

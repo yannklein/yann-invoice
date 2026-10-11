@@ -41,18 +41,20 @@ export function valuesToMonth(v: unknown[]): MonthRecord | null {
   return { month, fxJpyPerEur: rate, note: note ?? '', updatedAt: updatedAt ?? '' };
 }
 
-/** All lines with one month's lines swapped out. Months stay in order; lines keep their order within a month. */
-export function replaceMonth(all: Line[], month: string, lines: Line[]): Line[] {
-  const rest = all.filter((l) => l.month !== month);
-  return [...rest, ...lines].map((l, i) => ({ l, i })).sort((a, b) => a.l.month.localeCompare(b.l.month) || a.i - b.i).map(({ l }) => l);
-}
-
-export function upsertMonth(all: MonthRecord[], rec: MonthRecord): MonthRecord[] {
-  return [...all.filter((m) => m.month !== rec.month), rec].sort((a, b) => a.month.localeCompare(b.month));
+/**
+ * Raw sheet rows (month in column A) with one month's rows swapped for `fresh`. Months stay in order and rows keep
+ * their order within a month. Rows of other months are kept exactly as read, even ones that do not parse.
+ */
+export function replaceMonthRows(rows: unknown[][], month: string, fresh: Cell[][]): unknown[][] {
+  const rest = rows.filter((r) => str(r[0]) !== month);
+  return [...rest, ...fresh]
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => str(a.r[0]).localeCompare(str(b.r[0])) || a.i - b.i)
+    .map(({ r }) => r);
 }
 
 /** Pad with blank rows up to `previousCount`, so one update both writes the new rows and blanks stale ones. */
-export function padRows(rows: Cell[][], previousCount: number, width: number): Cell[][] {
-  const blanks = Array.from({ length: Math.max(0, previousCount - rows.length) }, () => Array<Cell>(width).fill(''));
+export function padRows(rows: unknown[][], previousCount: number, width: number): unknown[][] {
+  const blanks = Array.from({ length: Math.max(0, previousCount - rows.length) }, () => Array<unknown>(width).fill(''));
   return [...rows, ...blanks];
 }
