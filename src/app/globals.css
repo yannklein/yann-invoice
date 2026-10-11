@@ -71,11 +71,16 @@
   --border: rgb(240 237 232 / 0.1);
   --input: rgb(240 237 232 / 0.14);
   --ring: #2bb5aa;
-  --chart-1: #0d6e68;
-  --chart-2: #0e3d7a;
-  --chart-3: #7a1040;
-  --chart-4: #7a5208;
-  --chart-5: #2d2880;
+  /* Validated with the dataviz palette script against the dark card surface (#14161d):
+     lightness band, chroma, CVD/normal-vision separation and ≥3:1 contrast all pass. */
+  --chart-1: #1f9e94;
+  --chart-2: #c08a1e;
+  --chart-3: #4a8fe0;
+  --chart-4: #e0608d;
+  --chart-5: #8a80e8;
+  --chart-other: #7c7b78;
+  --chart-muted: rgb(240 237 232 / 0.35);
+  --chart-gap: #12141c;
   --radius: 0.875rem;
   --sidebar: #0c0e16;
   --sidebar-foreground: #f0ede8;
