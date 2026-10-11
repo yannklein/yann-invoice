@@ -101,12 +101,13 @@ export function revenueByMonth(entries: RevenueEntry[], months: string[], ccy: D
 }
 
 /**
- * First invoice month tracked as unpaid: 3 months (the /shared picker window) before the first month that links an
- * invoice. Months imported from the legacy tabs carry no links, so they would otherwise flag everything as unpaid.
+ * First invoice month tracked as unpaid: the first month that links an invoice (or this month, before any link).
+ * Earlier invoices may have been paid in months imported from the legacy tabs, which carry no links, so they cannot
+ * be told apart from unpaid ones.
  */
 export function unpaidFrom(lines: Line[], now: string): string {
   const linked = lines.filter((l) => l.kind === 'income' && l.invoiceId).map((l) => l.month).sort()[0];
-  return addMonths(linked && linked < now ? linked : now, -3);
+  return linked && linked < now ? linked : now;
 }
 
 export interface UnpaidRow {

@@ -69,26 +69,26 @@ describe('unpaid', () => {
       inv('n', { number: '202609004', total: null }),
       inv('future', { number: '202612001', total: 50 }),
     ];
-    const lines = [line({ month: '2026-10', kind: 'income', invoiceId: 'b', amount: 930, currency: 'EUR' })];
+    const lines = [line({ month: '2026-07', kind: 'income', invoiceId: 'b', amount: 930, currency: 'EUR' })];
     const u = unpaid(list, lines, '2026-10', 'EUR', FX);
     expect(u.rows.map((r) => [r.fileId, r.month, r.ageMonths])).toEqual([['c', '2026-08', 2], ['a', '2026-09', 1], ['future', '2026-12', 0]]);
     expect(u.rows[0]).toEqual({ fileId: 'c', number: '202608001', client: 'LWB', month: '2026-08', total: 465, currency: 'EUR', ageMonths: 2 });
     expect(u.total).toBe(3015);
     expect(u.from).toBe('2026-07');
   });
-  it('starts 3 months before the first month with a linked invoice, ignoring imported lines without links', () => {
+  it('starts at the first month with a linked invoice, ignoring imported lines without links', () => {
     const lines = [
       line({ month: '2025-10', kind: 'income', label: 'Matinno' }),
       line({ month: '2026-09', kind: 'income', invoiceId: 'x' }),
       line({ month: '2026-10', kind: 'income', invoiceId: 'y' }),
     ];
-    expect(unpaidFrom(lines, '2026-10')).toBe('2026-06');
-    const list = [inv('may', { number: '202605001' }), inv('jun', { number: '202606001' })];
-    expect(unpaid(list, lines, '2026-10', 'EUR', FX).rows.map((r) => r.fileId)).toEqual(['jun']);
+    expect(unpaidFrom(lines, '2026-10')).toBe('2026-09');
+    const list = [inv('jun', { number: '202606001' }), inv('aug', { number: '202608001' }), inv('sep', { number: '202609001' })];
+    expect(unpaid(list, lines, '2026-10', 'EUR', FX).rows.map((r) => r.fileId)).toEqual(['sep']);
   });
-  it('falls back to the picker window (now − 3) before any invoice was linked', () => {
-    expect(unpaidFrom([line({ month: '2025-10', kind: 'income', label: 'LWB' })], '2026-10')).toBe('2026-07');
-    expect(unpaidFrom([], '2026-10')).toBe('2026-07');
+  it('falls back to the current month before any invoice was linked', () => {
+    expect(unpaidFrom([line({ month: '2025-10', kind: 'income', label: 'LWB' })], '2026-10')).toBe('2026-10');
+    expect(unpaidFrom([], '2026-10')).toBe('2026-10');
   });
 });
 

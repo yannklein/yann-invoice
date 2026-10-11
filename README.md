@@ -45,8 +45,8 @@ account: the old monthly tabs are converted (EUR is recovered from their `… * 
 
 ## Dashboard
 
-`/dashboard` charts what the app already knows: revenue by client, unpaid invoices (tracked from 3 months before the first
-month that links an invoice in `/shared`), quarterly VAT / IRPF / foreign withholding for Modelo 303/130 prep, and the
+`/dashboard` charts what the app already knows: revenue by client, unpaid invoices (tracked from the first month that links
+an invoice in `/shared`), quarterly VAT / IRPF / foreign withholding for Modelo 303/130 prep, and the
 shared account's transfers and expenses. Amounts in other currencies use each month's ECB average (frankfurter.dev, cached
 a day); switch € / ¥ and the period at the top. Expense categories come from keyword rules in `src/lib/dashboard/household.ts`.
 

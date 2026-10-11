@@ -83,7 +83,7 @@ The year options run from the year of the oldest invoice to the current year.
 3. **Unpaid invoices.**
    - A table of number (linked to `/invoices/[id]`), client, invoice month, `total` in the invoice's currency, and age in months. Oldest first.
    - Which invoices count:
-     - invoice month ≥ **2025-07** (the first shared month − 3);
+     - invoice month ≥ the **first shared month that links an invoice** (or the current month before any link). Months imported from the legacy tabs carry no links, so earlier invoices cannot be told apart from paid ones;
      - currency JPY or EUR (USD can't be linked in `/shared`);
      - `fileId` is not the `invoiceId` of any income line.
    - The period selector does not filter it.
@@ -167,7 +167,7 @@ Each phase is a working page with its own tests and commit(s).
   - `business`:
     - top-4 + "Other";
     - client grouping by `clientKey`;
-    - unpaid excludes linked invoices, invoices before 2025-07 and USD invoices;
+    - unpaid excludes linked invoices, invoices before the first linked month and USD invoices;
     - payment delay as a median;
     - null subtotals are skipped and counted.
   - `tax`: quarter assignment, the VAT/IRPF/withholding sums, a mixed-currency quarter, due dates including Q4 → January, and "so far".
