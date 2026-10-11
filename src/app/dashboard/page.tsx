@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { SyncWarning } from '@/components/SyncWarning';
 import { byClient, byCountry, byService, paymentDelay, revenueByMonth, revenueEntries, shareBy, skippedIn, unpaid } from '@/lib/dashboard/business';
 import { buildFx } from '@/lib/dashboard/convert';
-import { delayLabel, money, monthShort, percent, signedPercent } from '@/lib/dashboard/format';
-import { parseCcy, parsePeriod, periodLabel, periodMonths, periodParam, todayDate, yearOptions } from '@/lib/dashboard/period';
+import { dayMonth, delayLabel, money, monthShort, percent, signedPercent } from '@/lib/dashboard/format';
+import { parseCcy, parsePeriod, periodLabel, periodMonths, periodParam, taxYearOf, todayDate, yearOptions } from '@/lib/dashboard/period';
+import { instalmentsInProgress, nextFiling, taxQuarters } from '@/lib/dashboard/tax';
 import { expenseBreakdown, incomeByCurrency, monthTransfer, transfers } from '@/lib/dashboard/household';
 import { fetchMonthlyRates } from '@/lib/fx/history';
 import { getGoogle } from '@/lib/google/client';
@@ -49,6 +50,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     income: incomeByCurrency(shared.months, shared.lines, ccy),
     thisMonth: monthTransfer(shared.months, shared.lines, now, ccy),
   };
+  const year = taxYearOf(period, now);
+  const tax = taxQuarters(rows, year, today, fx);
+  const next = nextFiling(rows, today, fx);
+  const instalments = shared ? instalmentsInProgress(shared.months, shared.lines) : [];
 
   return (
     <div className="space-y-10">
@@ -87,6 +92,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           label="Unpaid"
           value={open ? money(open.total, ccy) : '—'}
           sub={open ? plural(open.rows.length, 'invoice') : 'shared account not imported'}
+        />
+        <Stat
+          label="Next filing"
+          value={`Q${next.q} ${next.year}`}
+          sub={`due ${dayMonth(next.due)} · VAT ${money(next.vat, 'EUR', true)} · IRPF ${money(next.irpf, 'EUR', true)}${next.status === 'so-far' ? ' so far' : ''}`}
         />
         <Stat
           label="Transfer this month"
@@ -142,6 +152,73 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <ShareBars rows={shareBy(entries, months, ccy, byService)} ccy={ccy} />
           </Panel>
         </div>
+      </Section>
+
+      <Section title={`Tax ${year} · €`}>
+        <Panel title="Quarters">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm tabular-nums">
+              <thead className="eyebrow text-right text-foreground/50">
+                <tr>
+                  <th className="py-1.5 text-left font-bold">Quarter</th>
+                  <th className="font-bold">Revenue base</th>
+                  <th className="font-bold">VAT charged</th>
+                  <th className="font-bold">IRPF withheld</th>
+                  <th className="font-bold">Foreign withholding</th>
+                  <th className="font-bold">Due</th>
+                </tr>
+              </thead>
+              <tbody className="text-right">
+                {tax.quarters.map((q) => (
+                  <tr key={q.q} className={`border-t border-foreground/10 ${q.status === 'future' ? 'text-foreground/40' : ''}`}>
+                    <td className="py-1.5 text-left whitespace-nowrap">Q{q.q}{q.status === 'so-far' && <span className="text-foreground/50"> · so far</span>}</td>
+                    <td>{money(q.base, 'EUR', true)}</td>
+                    <td>{money(q.vat, 'EUR', true)}</td>
+                    <td>{money(q.irpf, 'EUR', true)}</td>
+                    <td>{money(q.withholding, 'EUR', true)}</td>
+                    <td className="whitespace-nowrap">{dayMonth(q.due)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t border-foreground/30 font-bold">
+                  <td className="py-1.5 text-left">{year}</td>
+                  <td>{money(tax.total.base, 'EUR', true)}</td>
+                  <td>{money(tax.total.vat, 'EUR', true)}</td>
+                  <td>{money(tax.total.irpf, 'EUR', true)}</td>
+                  <td>{money(tax.total.withholding, 'EUR', true)}</td>
+                  <td />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-xs text-foreground/50">
+            VAT charged feeds Modelo 303. IRPF withheld is subtracted in Modelo 130. Foreign withholding is a credit in the annual return.
+            The Modelo 130 payment itself is not estimated: business expenses are not tracked here.
+            {tax.skipped > 0 && ` ${plural(tax.skipped, 'invoice')} skipped (no subtotal).`}
+          </p>
+        </Panel>
+        <Panel title="Instalments in progress">
+          {!shared ? (
+            <NotImported />
+          ) : instalments.length ? (
+            <ul className="space-y-3">
+              {instalments.map((i) => (
+                <li key={i.label} className="space-y-1 text-sm">
+                  <div className="flex flex-wrap justify-between gap-x-3">
+                    <span>{i.label}</span>
+                    <span className="text-xs tabular-nums text-foreground/60">
+                      {i.index} of {i.count} · {money(i.amount, i.currency, true)} each · {money(i.remaining, i.currency, true)} left
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-foreground/10">
+                    <div className="h-full rounded-full bg-chart-1" style={{ width: `${(i.index / i.count) * 100}%` }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Empty>No instalments running</Empty>
+          )}
+        </Panel>
       </Section>
 
       <Section title="Household">
