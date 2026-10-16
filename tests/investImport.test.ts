@@ -73,3 +73,23 @@ describe('problems are reported, not hidden', () => {
     expect(m.newSymbols).toEqual([{ symbol: 'IMEU', isin: 'IE00B1YZSC51', yahoo: 'IMEU.AS', name: 'iShares Core MSCI Europe (Dist)', terPct: 0.12, sri: false }]);
   });
 });
+
+describe('dividend dedupe', () => {
+  const div = (amount: number) => `Dividends,Data,EUR,2026-02-27,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.0967 per Share (Mixed Income),${amount}`;
+  it('keeps two components of the same payment day apart', () => {
+    const split = csv.replace(div(15.32), `${div(10)}\n${div(5.32)}`);
+    const d = buildImport(parseIbkrCsv(split), empty, rates).dividends.filter((x) => x.date === '2026-02-27');
+    expect(d.map((x) => x.amount)).toEqual([10, 5.32]);
+    expect(d[0].key).not.toBe(d[1].key);
+  });
+  it('adds a component missing from an earlier upload', () => {
+    const first = buildImport(parseIbkrCsv(csv), empty, rates);
+    const later = csv.replace(div(15.32), `${div(15.32)}\n${div(-2)}`);
+    const again = buildImport(parseIbkrCsv(later), { ...empty, dividends: first.dividends }, rates);
+    expect(again.dividends.map((x) => x.amount)).toEqual([-2]);
+  });
+  it('recognises rows imported with the old key format', () => {
+    const old = r.dividends.map((d) => ({ ...d, key: `U0000001|div|${d.date}|${d.symbol}|${d.currency}` }));
+    expect(buildImport(stmt, { ...empty, dividends: old }, rates).dividends).toEqual([]);
+  });
+});

@@ -94,6 +94,33 @@ export const fromRow = {
   },
 };
 
+/** Buy months from "1,7", "1;7" or "1 7" (or a single whole number); null when the cell is not that. */
+function monthsOf(x: unknown): number[] | null {
+  if (typeof x === 'number') return Number.isInteger(x) && x >= 1 && x <= 12 ? [x] : null;
+  const parts = str(x).split(/[,;\s]+/).filter(Boolean);
+  const months = parts.map(Number);
+  return months.length && months.every((m) => Number.isInteger(m) && m >= 1 && m <= 12) ? months : null;
+}
+
+/**
+ * Plan keys whose cell holds something unusable, e.g. buyMonths typed as 1,7 in a comma-decimal sheet (stored as 1.7).
+ * Those keys fall back to their defaults, and the page reports them instead of guessing silently.
+ */
+export function invalidPlanKeys(rows: unknown[][]): string[] {
+  const bad: string[] = [];
+  for (const [k, v] of rows.map((r) => [str(r[0]), r[1]] as const)) {
+    const blank = str(v) === '';
+    const ok =
+      k === 'buyMonths' ? monthsOf(v) !== null
+      : k === 'perBuyEur' || k === 'realReturnStocks' || k === 'realReturnBonds' ? Number.isFinite(num(v))
+      : k === 'birthYear' ? blank || (Number.isInteger(num(v)) && num(v) > 1900)
+      : k === 'internalBefore' || k === 'exactFrom' ? isDate(day(v))
+      : true;
+    if (!ok) bad.push(k);
+  }
+  return bad;
+}
+
 export function planToRows(p: PlanSettings): Cell[][] {
   return [
     ['buyMonths', p.buyMonths.join(',')],
@@ -112,10 +139,10 @@ export function planFromRows(rows: unknown[][]): PlanSettings {
   const kv = new Map([...raw].map(([k, v]) => [k, str(v)]));
   const n = (k: string, d: number) => (Number.isFinite(num(kv.get(k))) ? num(kv.get(k)) : d);
   const date = (k: 'internalBefore' | 'exactFrom') => (isDate(day(raw.get(k))) ? day(raw.get(k)) : DEFAULT_PLAN[k]);
-  const months = list(kv.get('buyMonths') ?? '').map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12);
+  const months = monthsOf(raw.get('buyMonths'));
   const birth = num(kv.get('birthYear'));
   return {
-    buyMonths: kv.has('buyMonths') ? months : DEFAULT_PLAN.buyMonths,
+    buyMonths: months ?? DEFAULT_PLAN.buyMonths,
     perBuyEur: n('perBuyEur', DEFAULT_PLAN.perBuyEur),
     realReturnStocks: n('realReturnStocks', DEFAULT_PLAN.realReturnStocks),
     realReturnBonds: n('realReturnBonds', DEFAULT_PLAN.realReturnBonds),
@@ -151,5 +178,5 @@ export function parsePortfolio(raw: Record<AppTab, unknown[][]>): Portfolio {
     symbols: parse(raw.Symbols, fromRow.symbols),
     benchmarks: parse(raw.Benchmarks, fromRow.benchmarks),
   };
-  return { ...p, invalidRows };
+  return { ...p, invalidRows: invalidRows + invalidPlanKeys((raw.Plan ?? []).filter(nonBlank)).length };
 }

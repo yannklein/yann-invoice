@@ -68,17 +68,21 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
   }
 
   const dividends: Dividend[] = [];
+  const divSeen = new Map<string, number>();
   for (const d of stmt.dividends) {
+    const base = `${acc}|div|${d.date}|${d.symbol}|${d.currency}|${d.amount}`;
+    const n = divSeen.get(base) ?? 0;
+    divSeen.set(base, n + 1);
     const amountEur = eur(d.amount, d.currency, d.date);
     if (amountEur === null) continue;
-    dividends.push({ key: `${acc}|div|${d.date}|${d.symbol}|${d.currency}`, date: d.date, symbol: d.symbol, currency: d.currency, amount: d.amount, amountEur });
+    dividends.push({ key: `${base}|${n}`, date: d.date, symbol: d.symbol, currency: d.currency, amount: d.amount, amountEur });
   }
 
   const fresh = <T extends { key: string }>(rows: T[], old: { key: string }[]) => {
     const keys = new Set(old.map((o) => o.key));
     return rows.filter((r) => !keys.has(r.key));
   };
-  const add = { trades: fresh(trades, existing.trades), deposits: fresh(deposits, existing.deposits), dividends: fresh(dividends, existing.dividends) };
+  const add = { trades: fresh(trades, existing.trades), deposits: fresh(deposits, existing.deposits), dividends: freshDividends(dividends, existing.dividends) };
 
   const merged = { trades: [...existing.trades, ...add.trades], deposits: [...existing.deposits, ...add.deposits], dividends: [...existing.dividends, ...add.dividends] };
   const sheet = holdings(merged.trades);
@@ -105,4 +109,23 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
     skipped: stmt.skipped,
     period: stmt.period,
   };
+}
+
+/**
+ * Dividends are matched on content (day, symbol, currency, amount, and the how-many-th such row) rather than on key,
+ * so a payment split into several rows is kept apart and rows imported under an older key format still count as present.
+ */
+function freshDividends(rows: Dividend[], old: Dividend[]): Dividend[] {
+  const signatures = (xs: Dividend[]) => {
+    const seen = new Map<string, number>();
+    return xs.map((d) => {
+      const sig = `${d.date}|${d.symbol}|${d.currency}|${d.amount}`;
+      const n = seen.get(sig) ?? 0;
+      seen.set(sig, n + 1);
+      return `${sig}|${n}`;
+    });
+  };
+  const present = new Set(signatures(old));
+  const mine = signatures(rows);
+  return rows.filter((_, i) => !present.has(mine[i]));
 }

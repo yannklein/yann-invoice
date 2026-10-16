@@ -50,7 +50,7 @@ export async function linkPortfolio(g: Google, id: string): Promise<{ created: A
   return { created };
 }
 
-/** Append the import's new rows after the last used row of each tab, in one batchUpdate. */
+/** Append the import's new rows to the end of each tab's table. */
 export async function appendImport(sheets: sheets_v4.Sheets, id: string, r: ImportResult): Promise<void> {
   const parts: [AppTab, Cell[][]][] = [
     ['Trades', r.trades.map(toRow.trades)],
@@ -58,16 +58,11 @@ export async function appendImport(sheets: sheets_v4.Sheets, id: string, r: Impo
     ['Dividends', r.dividends.map(toRow.dividends)],
     ['Symbols', r.newSymbols.map(toRow.symbols)],
   ];
-  const todo = parts.filter(([, rows]) => rows.length);
-  if (!todo.length) return;
-  const used = await sheets.spreadsheets.values.batchGet({ spreadsheetId: id, ranges: todo.map(([t]) => `${q(t)}!A:A`) });
-  await sheets.spreadsheets.values.batchUpdate({
-    spreadsheetId: id,
-    requestBody: {
-      valueInputOption: 'RAW',
-      data: todo.map(([t, rows], i) => ({ range: `${q(t)}!A${(used.data.valueRanges?.[i]?.values?.length ?? 1) + 1}`, values: rows })),
-    },
-  });
+  for (const [t, rows] of parts) {
+    if (!rows.length) continue;
+    // INSERT_ROWS appends after the table, so a hand-added row (even one with a blank key) is never written over.
+    await sheets.spreadsheets.values.append({ spreadsheetId: id, range: `${q(t)}!A1`, valueInputOption: 'RAW', insertDataOption: 'INSERT_ROWS', requestBody: { values: rows } });
+  }
 }
 
 /** Set one Plan key, keeping every other row (unknown keys included) as it is. */

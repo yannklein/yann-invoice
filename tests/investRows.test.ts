@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BENCHMARKS, DEFAULT_PLAN, DEFAULT_SLOTS, SEED_CASH, SEED_DEPOSITS, SEED_SNAPSHOTS, defaultRowsFor } from '@/lib/invest/defaults';
-import { APP_TABS, HEADERS, fromRow, parsePortfolio, planFromRows, planToRows, toRow, type AppTab } from '@/lib/invest/rows';
+import { APP_TABS, HEADERS, fromRow, invalidPlanKeys, parsePortfolio, planFromRows, planToRows, toRow, type AppTab } from '@/lib/invest/rows';
 import type { CashRow, Deposit, Dividend, Snapshot, Trade } from '@/lib/invest/types';
 
 const trade: Trade = {
@@ -102,5 +102,19 @@ describe('plan dates typed by hand', () => {
     const p = planFromRows([['exactFrom', 46300], ['perBuyEur', 25000]]);
     expect(p.exactFrom).toBe('2026-10-05');
     expect(p.perBuyEur).toBe(25000);
+  });
+});
+
+describe('plan values that do not parse are reported', () => {
+  it('flags a buyMonths cell Sheets turned into a decimal number', () => {
+    const raw = emptyRaw();
+    raw.Plan = [['buyMonths', 1.7], ['perBuyEur', 'lots'], ['realReturnStocks', 0.05]];
+    expect(invalidPlanKeys(raw.Plan)).toEqual(['buyMonths', 'perBuyEur']);
+    expect(parsePortfolio(raw).invalidRows).toBe(2);
+  });
+  it('accepts ; or spaces between months', () => {
+    expect(planFromRows([['buyMonths', '1;7']]).buyMonths).toEqual([1, 7]);
+    expect(planFromRows([['buyMonths', '3 9']]).buyMonths).toEqual([3, 9]);
+    expect(invalidPlanKeys([['buyMonths', '1;7'], ['birthYear', '']])).toEqual([]);
   });
 });
