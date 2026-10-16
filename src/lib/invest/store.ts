@@ -81,7 +81,7 @@ export async function savePlanValue(sheets: sheets_v4.Sheets, id: string, key: k
 }
 
 /** Send a slot's new money to its SRI symbol (and count that symbol in the slot). Old holdings stay put. */
-export async function useSriForSlot(sheets: sheets_v4.Sheets, id: string, slot: string): Promise<void> {
+export async function sriForNewBuys(sheets: sheets_v4.Sheets, id: string, slot: string): Promise<void> {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId: id, range: 'Slots!A2:G', valueRenderOption: 'UNFORMATTED_VALUE' });
   const rows = (res.data.values ?? []) as unknown[][];
   const at = rows.findIndex((r) => String(r[0] ?? '').trim() === slot);
