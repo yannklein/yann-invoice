@@ -43,20 +43,20 @@ export const fromRow = {
     const [quantity, price, commission, amountEur] = [num(q), num(p), num(c || 0), num(a)];
     if (!key || !isDate(date ?? '') || !symbol || !isCcy(currency ?? '') || !fin(quantity, price, commission, amountEur)) return null;
     if (source !== 'ibkr' && source !== 'transfer' && source !== 'manual') return null;
-    return { key, date, account: account ?? '', symbol, isin: isin ?? '', currency, quantity, price, commission, amountEur, source, note: note ?? '' };
+    return { key, date, account: account ?? '', symbol, isin: isin ?? '', currency: currency as Ccy, quantity, price, commission, amountEur, source, note: note ?? '' };
   },
   deposits(v: unknown[]): Deposit | null {
     const [key, date, currency, a, e, source, kind, note] = v.map(str);
     const [amount, amountEur] = [num(a), num(e)];
     if (!key || !isDate(date ?? '') || !isCcy(currency ?? '') || !fin(amount, amountEur)) return null;
     if ((source !== 'ibkr' && source !== 'sheet') || (kind !== 'new' && kind !== 'internal')) return null;
-    return { key, date, currency, amount, amountEur, source, kind, note: note ?? '' };
+    return { key, date, currency: currency as Ccy, amount, amountEur, source, kind, note: note ?? '' };
   },
   dividends(v: unknown[]): Dividend | null {
     const [key, date, symbol, currency, a, e] = v.map(str);
     const [amount, amountEur] = [num(a), num(e)];
     if (!key || !isDate(date ?? '') || !symbol || !isCcy(currency ?? '') || !fin(amount, amountEur)) return null;
-    return { key, date, symbol, currency, amount, amountEur };
+    return { key, date, symbol, currency: currency as Ccy, amount, amountEur };
   },
   cash(v: unknown[]): CashRow | null {
     const [date, d, b, note] = v.map(str);
