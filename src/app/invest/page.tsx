@@ -107,7 +107,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       <Section title="This round">
         <Panel title="What to buy">
           <div className="space-y-5 text-sm">
-            <form className="flex flex-wrap items-end gap-2" action="/invest">
+            <form key={v.round.amountEur} className="flex flex-wrap items-end gap-2" action="/invest">
               <label className="grid gap-1">
                 <span className="eyebrow">Amount</span>
                 <Input name="amount" type="number" min={0} step={50} defaultValue={v.round.amountEur} className="w-36" />
@@ -218,7 +218,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
                 </tbody>
               </table>
             </div>
-            <form action={addCashAction} className="flex flex-wrap items-end gap-2">
+            <form key={v.livretEur} action={addCashAction} className="flex flex-wrap items-end gap-2">
               <label className="grid gap-1"><span className="eyebrow">Livret Bleu on</span><Input name="date" type="date" defaultValue={today} className="w-40" /></label>
               <label className="grid gap-1"><span className="eyebrow">Balance €</span><Input name="balance" type="number" step="0.01" required defaultValue={v.livretEur || undefined} className="w-32" /></label>
               <label className="grid gap-1"><span className="eyebrow">New money paid in €</span><Input name="deposit" type="number" step="0.01" defaultValue={0} className="w-32" /></label>
