@@ -22,6 +22,10 @@ const num = (x: unknown) => (str(x) === '' ? NaN : Number(str(x)));
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 export const isDate = (s: string) => DATE_RE.test(s);
 const isCcy = (s: string): s is Ccy => s === 'EUR' || s === 'USD' || s === 'JPY';
+/** A cell holding a date: ISO text as written by the app, or a Sheets serial when Yann typed a date by hand. */
+const day = (x: unknown) =>
+  typeof x === 'number' && x > 20000 && x < 80000 ? new Date(Date.UTC(1899, 11, 30) + Math.round(x) * 86_400_000).toISOString().slice(0, 10) : str(x);
+const cellsWithDate = (v: unknown[], at: number) => v.map((c, i) => (i === at ? day(c) : str(c)));
 const list = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
 const yn = (b: boolean) => (b ? 'y' : 'n');
 const fin = (...xs: number[]) => xs.every(Number.isFinite);
@@ -39,33 +43,33 @@ export const toRow = {
 
 export const fromRow = {
   trades(v: unknown[]): Trade | null {
-    const [key, date, account, symbol, isin, currency, q, p, c, a, source, note] = v.map(str);
+    const [key, date, account, symbol, isin, currency, q, p, c, a, source, note] = cellsWithDate(v, 1);
     const [quantity, price, commission, amountEur] = [num(q), num(p), num(c || 0), num(a)];
     if (!key || !isDate(date ?? '') || !symbol || !isCcy(currency ?? '') || !fin(quantity, price, commission, amountEur)) return null;
     if (source !== 'ibkr' && source !== 'transfer' && source !== 'manual') return null;
     return { key, date, account: account ?? '', symbol, isin: isin ?? '', currency: currency as Ccy, quantity, price, commission, amountEur, source, note: note ?? '' };
   },
   deposits(v: unknown[]): Deposit | null {
-    const [key, date, currency, a, e, source, kind, note] = v.map(str);
+    const [key, date, currency, a, e, source, kind, note] = cellsWithDate(v, 1);
     const [amount, amountEur] = [num(a), num(e)];
     if (!key || !isDate(date ?? '') || !isCcy(currency ?? '') || !fin(amount, amountEur)) return null;
     if ((source !== 'ibkr' && source !== 'sheet') || (kind !== 'new' && kind !== 'internal')) return null;
     return { key, date, currency: currency as Ccy, amount, amountEur, source, kind, note: note ?? '' };
   },
   dividends(v: unknown[]): Dividend | null {
-    const [key, date, symbol, currency, a, e] = v.map(str);
+    const [key, date, symbol, currency, a, e] = cellsWithDate(v, 1);
     const [amount, amountEur] = [num(a), num(e)];
     if (!key || !isDate(date ?? '') || !symbol || !isCcy(currency ?? '') || !fin(amount, amountEur)) return null;
     return { key, date, symbol, currency: currency as Ccy, amount, amountEur };
   },
   cash(v: unknown[]): CashRow | null {
-    const [date, d, b, note] = v.map(str);
+    const [date, d, b, note] = cellsWithDate(v, 0);
     const [deposit, balance] = [num(d || 0), num(b)];
     if (!isDate(date ?? '') || !fin(deposit, balance)) return null;
     return { date, deposit, balance, note: note ?? '' };
   },
   snapshots(v: unknown[]): Snapshot | null {
-    const [date, val, note] = v.map(str);
+    const [date, val, note] = cellsWithDate(v, 0);
     const valueEur = num(val);
     if (!isDate(date ?? '') || !fin(valueEur)) return null;
     return { date, valueEur, note: note ?? '' };
@@ -104,9 +108,10 @@ export function planToRows(p: PlanSettings): Cell[][] {
 
 /** Plan key/value rows; any missing or unparseable key keeps its default. */
 export function planFromRows(rows: unknown[][]): PlanSettings {
-  const kv = new Map(rows.map((r) => [str(r[0]), str(r[1])]));
+  const raw = new Map(rows.map((r) => [str(r[0]), r[1]]));
+  const kv = new Map([...raw].map(([k, v]) => [k, str(v)]));
   const n = (k: string, d: number) => (Number.isFinite(num(kv.get(k))) ? num(kv.get(k)) : d);
-  const date = (k: 'internalBefore' | 'exactFrom') => (isDate(kv.get(k) ?? '') ? kv.get(k)! : DEFAULT_PLAN[k]);
+  const date = (k: 'internalBefore' | 'exactFrom') => (isDate(day(raw.get(k))) ? day(raw.get(k)) : DEFAULT_PLAN[k]);
   const months = list(kv.get('buyMonths') ?? '').map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12);
   const birth = num(kv.get('birthYear'));
   return {

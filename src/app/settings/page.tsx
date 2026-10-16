@@ -7,10 +7,11 @@ import { resolveIds } from '@/lib/google/drive';
 import { readSettings } from '@/lib/index/store';
 import { previewSetup } from '@/lib/setup';
 import { fullResyncAction, runSetupAction, saveSettingsAction } from './actions';
+import { PortfolioLinkCard } from './PortfolioLinkCard';
 import { SharedImportCard } from './SharedImportCard';
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ shared?: string; sharedError?: string }> }) {
-  const { shared, sharedError } = await searchParams;
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ shared?: string; sharedError?: string; portfolioError?: string }> }) {
+  const { shared, sharedError, portfolioError } = await searchParams;
   const g = await getGoogle();
   const ids = await resolveIds(g.drive);
 
@@ -59,6 +60,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </CardContent>
       </Card>
       <SharedImportCard g={g} previewParam={shared} inputError={!!sharedError} />
+      <PortfolioLinkCard g={g} inputError={!!portfolioError} />
     </div>
   );
 }

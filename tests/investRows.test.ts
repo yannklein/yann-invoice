@@ -88,3 +88,19 @@ describe('defaultRowsFor only seeds missing tabs', () => {
     for (const t of APP_TABS) for (const r of defaultRowsFor(t)) expect(r).toHaveLength(HEADERS[t].length);
   });
 });
+
+describe('hand-typed dates', () => {
+  it('accepts a Sheets date serial where a date is expected', () => {
+    // 46057 = 2026-02-04 in Sheets' 1899-12-30 epoch
+    expect(fromRow.trades(toRow.trades(trade).map((c, i) => (i === 1 ? 46057 : c)))!.date).toBe('2026-02-04');
+    expect(fromRow.cash([46208, 0, 4559.7, ''])!.date).toBe('2026-07-05');
+  });
+});
+
+describe('plan dates typed by hand', () => {
+  it('reads a serial for date keys but never for amounts', () => {
+    const p = planFromRows([['exactFrom', 46300], ['perBuyEur', 25000]]);
+    expect(p.exactFrom).toBe('2026-10-05');
+    expect(p.perBuyEur).toBe(25000);
+  });
+});
