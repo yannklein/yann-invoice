@@ -1,0 +1,117 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,BrokerName,Interactive Brokers Ireland Limited
+Statement,Data,BrokerAddress,
+Statement,Data,Title,Activity Statement
+Statement,Data,Period,"January 1, 2026 - October 15, 2026"
+Statement,Data,WhenGenerated,"2026-10-16, 18:07:29 EDT"
+Account Information,Header,Field Name,Field Value
+Account Information,Data,Name,Test Investor
+Account Information,Data,Account,U0000001
+Account Information,Data,Account Type,Individual
+Account Information,Data,Customer Type,Individual
+Account Information,Data,Account Capabilities,Cash
+Account Information,Data,Base Currency,EUR
+Net Asset Value,Header,Asset Class,Prior Total,Current Long,Current Short,Current Total,Change
+Net Asset Value,Data,Cash ,0,91.207324737,0,91.207324737,91.207324737
+Net Asset Value,Data,Stock,0,38003.22,0,38003.22,38003.22
+Net Asset Value,Data,Total,0,38094.427324737,0,38094.427324737,38094.427324737
+Net Asset Value,Header,Time Weighted Rate of Return
+Net Asset Value,Data,10.295750474%
+Change in NAV,Header,Field Name,Field Value
+Change in NAV,Data,Starting Value,0
+Change in NAV,Data,Mark-to-Market,3000.3577908
+Change in NAV,Data,Deposits & Withdrawals,12700
+Change in NAV,Data,Position Transfers,22133.14
+Change in NAV,Data,Dividends,267.7650848
+Change in NAV,Data,Change in Dividend Accruals,-0.8707605
+Change in NAV,Data,Commissions,-6.83559
+Change in NAV,Data,Other FX Translations,0.8707605
+Change in NAV,Data,Ending Value,38094.427324737
+Mark-to-Market Performance Summary,Header,Asset Category,Symbol,Prior Quantity,Current Quantity,Prior Price,Current Price,Mark-to-Market P/L Position,Mark-to-Market P/L Transaction,Mark-to-Market P/L Commissions,Mark-to-Market P/L Other,Mark-to-Market P/L Total,Code
+Mark-to-Market Performance Summary,Data,Stocks,CSBGE3,0,66,--,116.2900,2.31,1.65,-3.83559,0,0.12441,
+Mark-to-Market Performance Summary,Data,Stocks,IMEU,0,158.3901,--,39.9200,334.2,0,0,135.88,470.08,
+Mark-to-Market Performance Summary,Data,Stocks,IWRD,0,256.1369,--,93.7200,2650.36966,11.37924,-3,131.8850848,2790.6339848,
+Mark-to-Market Performance Summary,Data,Total,,,,,,2986.87966,13.02924,-6.83559,267.7650848,3260.8383948,
+Mark-to-Market Performance Summary,Data,Forex,EUR,0,55.987891137,1.0000,1.0000,0,0,0,0,0,
+Mark-to-Market Performance Summary,Data,Forex,USD,0,39.52,--,0.89118,0.3068678,0.142063,0,0,0.4489308,
+Mark-to-Market Performance Summary,Data,Total,,,,,,0.3068678,0.142063,0,0,0.4489308,
+Mark-to-Market Performance Summary,Data,Total (All Assets),,,,,,2987.1865278,13.171303,-6.83559,267.7650848,3261.2873256,
+Cash Report,Header,Currency Summary,Currency,Total,Securities,Futures,
+Cash Report,Data,Starting Cash,Base Currency Summary,0,0,0,
+Cash Report,Data,Commissions,Base Currency Summary,-6.83559,-6.83559,0,
+Cash Report,Data,Deposits,Base Currency Summary,12700,12700,0,
+Cash Report,Data,Dividends,Base Currency Summary,267.7650848,267.7650848,0,
+Cash Report,Data,Trades (Sales),Base Currency Summary,97.11458114,97.11458114,0,
+Cash Report,Data,Trades (Purchase),Base Currency Summary,-12967.143619,-12967.143619,0,
+Cash Report,Data,Cash FX Translation Gain/Loss,Base Currency Summary,0.3068678,0.3068678,0,
+Cash Report,Data,Ending Cash,Base Currency Summary,91.207324737,91.207324737,0,
+Cash Report,Data,Ending Settled Cash,Base Currency Summary,91.207324737,91.207324737,0,
+Cash Report,Data,Starting Cash,EUR,0,0,0,
+Cash Report,Data,Commissions,EUR,-6.83559,-6.83559,0,
+Cash Report,Data,Deposits,EUR,12700,12700,0,
+Cash Report,Data,Dividends,EUR,135.88,135.88,0,
+Cash Report,Data,Trades (Sales),EUR,97.11458114,97.11458114,0,
+Cash Report,Data,Trades (Purchase),EUR,-12870.1711,-12870.1711,0,
+Cash Report,Data,Ending Cash,EUR,55.987891137,55.987891137,0,
+Cash Report,Data,Ending Settled Cash,EUR,55.987891137,55.987891137,0,
+Cash Report,Data,Starting Cash,USD,0,0,0,
+Cash Report,Data,Dividends,USD,150.47,150.47,0,
+Cash Report,Data,Trades (Purchase),USD,-110.95,-110.95,0,
+Cash Report,Data,Ending Cash,USD,39.52,39.52,0,
+Cash Report,Data,Ending Settled Cash,USD,39.52,39.52,0,
+Open Positions,Header,DataDiscriminator,Asset Category,Currency,Symbol,Quantity,Mult,Cost Price,Cost Basis,Close Price,Value,Unrealized P/L,Code
+Open Positions,Data,Summary,Stocks,EUR,CSBGE3,66,1,116.288115,7675.01559,116.29,7675.14,0.12441,
+Open Positions,Data,Summary,Stocks,EUR,IMEU,158.3901,1,33.822621477,5357.168398,39.92,6322.93,965.761601,
+Open Positions,Data,Summary,Stocks,EUR,IWRD,256.1369,1,78.132718613,20012.672334,93.72,24005.15,3992.477666,
+Open Positions,Total,,Stocks,EUR,,,,,33044.856322,,38003.22,4958.363677,
+Forex Balances,Header,Asset Category,Currency,Description,Quantity,Cost Price,Cost Basis in EUR,Close Price,Value in EUR,Unrealized P/L in EUR,Code
+Forex Balances,Data,Forex,EUR,EUR,55.987891137,0,-55.987891137,1,55.987891137,0,
+Forex Balances,Data,Forex,EUR,USD,39.52,0.882640005,-34.881933,0.89118,35.219434,0.337501,
+Forex Balances,Data,Total,,,,,-90.869824137,,91.207325137,0.337501,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,EUR,CSBGE3,"2026-02-04, 10:54:45",66,116.23,116.255,-7671.18,-3.83559,7675.01559,0,1.65,O
+Trades,SubTotal,,Stocks,EUR,CSBGE3,,66,,,-7671.18,-3.83559,7675.01559,0,1.65,
+Trades,Data,Order,Stocks,EUR,IWRD,"2026-07-06, 03:03:40",57.4462,90.501984465,90.7,-5198.9911,-3,5201.9911,0,11.3792,FPA;O;P
+Trades,SubTotal,,Stocks,EUR,IWRD,,57.4462,,,-5198.9911,-3,5201.9911,0,11.3792,
+Trades,Total,,Stocks,EUR,,,,,,-12870.1711,-6.83559,12877.00669,0,13.0292,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,,Proceeds,Comm in EUR,,,MTM in EUR,Code
+Trades,Data,Order,Forex,USD,EUR.USD,"2026-07-06, 03:03:41",53.65,1.1424,,-61.28976,0,,,0.081524,AFx
+Trades,Data,Order,Forex,USD,EUR.USD,"2026-07-06, 03:03:57",40.38,1.1424,,-46.130112,0,,,0.06136,AFx
+Trades,Data,Order,Forex,USD,EUR.USD,"2026-07-06, 17:00:00",3.08458114,1.14444323,,-3.530128,0,,,-0.000821,
+Trades,SubTotal,,Forex,USD,EUR.USD,,97.11458114,,,-110.95,0,,,0.142063,
+Trades,Total,,Forex,USD,,,,,,-110.95,0,,,0.142063,
+Trades,Total,,Forex,EUR,,,,,,-96.972519,0,,,0.142063,
+Transfers,Header,Asset Category,Currency,Symbol,Date,Type,Direction,Xfer Company,Xfer Account,Qty,Xfer Price,Market Value,Realized P/L,Cash Amount,Code
+Transfers,Data,Stocks,EUR,IMEU,2026-01-27,Internal,In,--,U0000002,158.3901,--,"5,988.73",0.00,0.00,
+Transfers,Data,Stocks,EUR,IWRD,2026-01-27,Internal,In,--,U0000002,198.6907,--,"16,144.41",0.00,0.00,
+Transfers,Data,Total,,,,,,,,,,22133.14,0,0,
+Deposits & Withdrawals,Header,Currency,Settle Date,Description,Amount
+Deposits & Withdrawals,Data,EUR,2026-01-07,Electronic Fund Transfer,100
+Deposits & Withdrawals,Data,EUR,2026-01-29,Electronic Fund Transfer,3000
+Deposits & Withdrawals,Data,EUR,2026-01-30,Electronic Fund Transfer,3000
+Deposits & Withdrawals,Data,EUR,2026-02-02,Electronic Fund Transfer,1600
+Deposits & Withdrawals,Data,EUR,2026-06-30,Electronic Fund Transfer,300
+Deposits & Withdrawals,Data,EUR,2026-06-30,Electronic Fund Transfer,2700
+Deposits & Withdrawals,Data,EUR,2026-06-30,Electronic Fund Transfer,2000
+Deposits & Withdrawals,Data,Total,,,12700
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,EUR,2026-02-27,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.0967 per Share (Mixed Income),15.32
+Dividends,Data,EUR,2026-05-29,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.4272 per Share (Mixed Income),67.66
+Dividends,Data,EUR,2026-08-31,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.334 per Share (Mixed Income),52.9
+Dividends,Data,Total,,,135.88
+Dividends,Data,USD,2026-03-31,IWRD(IE00B0M62Q58) Cash Dividend USD 0.131 per Share (Mixed Income),26.03
+Dividends,Data,USD,2026-06-30,IWRD(IE00B0M62Q58) Cash Dividend USD 0.4274 per Share (Mixed Income),84.92
+Dividends,Data,USD,2026-09-30,IWRD(IE00B0M62Q58) Cash Dividend USD 0.1543 per Share (Mixed Income),39.52
+Dividends,Data,Total,,,150.47
+Dividends,Data,Total in EUR,,,131.8850848
+Dividends,Data,Total Dividends in EUR,,,267.7650848
+Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Underlying,Listing Exch,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,CSBGE3,ISHARES EURO GOVT BOND 1-3Y,75098198,IE00B3VTMJ91,CSBGE3,EBS,1,ETF,
+Financial Instrument Information,Data,Stocks,IMEU,ISHARES CORE MSCI EUROPE,45998497,IE00B1YZSC51,IMEU,AEB,1,ETF,
+Financial Instrument Information,Data,Stocks,IWRD,ISHARES MSCI WORLD,37036625,IE00B0M62Q58,IWRD,AEB,1,ETF,
+Codes,Header,Code,Meaning,Code (Cont.),Meaning (Cont.)
+Codes,Data,AFx,AutoFX conversion resulting from trading
+Codes,Data,O,Opening Trade
+Notes/Legal Notes,Header,Type,Note
+Notes/Legal Notes,Data,Notes,"Quantities preceded by a ""-"" sign indicate sell transactions. Other transactions are purchases. "
+Notes/Legal Notes,Data,Notes,Trade execution times are displayed in Eastern Time.

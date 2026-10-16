@@ -8,6 +8,7 @@ import { settingsFromForm } from '@/lib/index/rows';
 import { syncIndex, writeSettings } from '@/lib/index/store';
 import { runSetup } from '@/lib/setup';
 import { currentMonth } from '@/lib/shared/model';
+import { linkPortfolio } from '@/lib/invest/store';
 import { parseSheetId, runImport } from '@/lib/shared/store';
 
 export async function runSetupAction() {
@@ -45,4 +46,13 @@ export async function runSharedImportAction(formData: FormData) {
   await runImport(g, id, currentMonth());
   revalidatePath('/shared');
   redirect('/shared');
+}
+
+export async function linkPortfolioAction(formData: FormData) {
+  const id = parseSheetId(String(formData.get('sheet') ?? ''));
+  if (!id) redirect('/settings?portfolioError=1#portfolio');
+  const g = await getGoogle();
+  await linkPortfolio(g, id);
+  revalidatePath('/invest');
+  redirect('/invest');
 }
