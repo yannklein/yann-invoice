@@ -1,0 +1,41 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "EUR",
+     "symbol": "CSBGE3.SW",
+     "exchangeName": "EBS",
+     "gmtoffset": 7200,
+     "longName": "iShares VII PLC - iShares \u20ac Govt Bond 1-3yr ETF EUR Acc"
+    },
+    "timestamp": [
+     1759302000,
+     1759388400,
+     1759474800
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "close": [
+        115.3949966430664,
+        null,
+        115.41999816894531
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        115.3949966430664,
+        null,
+        115.41999816894531
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}
