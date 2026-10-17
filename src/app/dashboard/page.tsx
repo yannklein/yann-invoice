@@ -142,9 +142,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               <Stat
                 label="Today"
                 value={money(stocks.breakdown.todayEur, 'EUR')}
-                sub={`funds, IBKR cash, Livret Bleu${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
+                sub={`IBKR + Livret Bleu ${money(stocks.breakdown.livretEur, 'EUR')} · put in ${money(stocks.breakdown.newMoneyEur, 'EUR')} ${sinceLabel(stocks.breakdown)}`}
               />
-              <Stat label="Put in" value={money(stocks.breakdown.newMoneyEur, 'EUR')} sub={sinceLabel(stocks.breakdown)} />
+              <Stat
+                label="IBKR account"
+                value={money(stocks.breakdown.ibkrEur, 'EUR')}
+                sub={`funds + cash ${money(stocks.breakdown.ibkrCashEur, 'EUR')}${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
+              />
               <Stat
                 label="Stock gain"
                 value={signedMoney(stocks.breakdown.stockGainEur)}

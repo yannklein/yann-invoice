@@ -27,6 +27,7 @@ const eur = (x: number) => money(x, 'EUR');
 const eurCents = (x: number) => money(x, 'EUR', true);
 const longDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const monthYear = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayMonthShort = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const minusDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
 
 export default async function InvestPage({ searchParams }: { searchParams: Promise<{ amount?: string }> }) {
@@ -72,6 +73,8 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     invested: flows.filter((f) => f.date <= pt.date).reduce((s, f) => s + f.amountEur, 0),
   }));
   const staleQuotes = v.quotes.filter((q) => q.stale);
+  const heldSymbols = new Set(Object.keys(holdings(p.trades)));
+  const priceDate = v.quotes.filter((q) => heldSymbols.has(q.symbol)).map((q) => q.date).sort()[0] ?? null;
 
   return (
     <div className="space-y-10">
@@ -98,15 +101,19 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Today" value={eur(v.breakdown.todayEur)} sub="funds, IBKR cash, Livret Bleu" />
-        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub={sinceLabel(v.breakdown)} />
+        <Stat label="Today" value={eur(v.breakdown.todayEur)} sub={`IBKR + Livret Bleu ${eur(v.breakdown.livretEur)}`} />
+        <Stat
+          label="IBKR account"
+          value={eur(v.breakdown.ibkrEur)}
+          sub={`funds + cash ${eurCents(v.breakdown.ibkrCashEur)}${priceDate ? ` · prices of ${dayMonthShort(priceDate)}` : ''}`}
+        />
         <Stat
           label="Total result"
           value={`${v.breakdown.resultEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.resultEur))}`}
           sub={`of which stock gain ${v.breakdown.stockGainEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.stockGainEur))}`}
           warn={v.breakdown.resultEur < 0}
         />
-        <Stat label="Cash in IBKR" value={eurCents(v.ibkrCashEur)} sub={`Livret Bleu ${eur(v.livretEur)}`} />
+        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub={sinceLabel(v.breakdown)} />
       </div>
 
       <Panel title="Where today's money comes from">

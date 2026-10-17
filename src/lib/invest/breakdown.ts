@@ -7,6 +7,12 @@ import { round2, type Portfolio } from './types';
 export interface MoneyBreakdown {
   /** Funds + uninvested IBKR cash + Livret Bleu. */
   todayEur: number;
+  /** The funds at the latest prices. */
+  fundsEur: number;
+  ibkrCashEur: number;
+  /** The IBKR account: funds + its cash (what the IBKR app calls value). */
+  ibkrEur: number;
+  livretEur: number;
   /** New savings put in, net of money taken out. */
   newMoneyEur: number;
   /** Market gain on the funds in the current accounts since they were bought: unrealized plus realized on sales. */
@@ -37,7 +43,8 @@ export interface MoneyBreakdown {
 export function moneyBreakdown(p: Portfolio, fundsValueEur: number, today: string): MoneyBreakdown {
   const cash = ibkrCashEur(p);
   const livret = livretMoves(p.cash);
-  const todayEur = round2(fundsValueEur + cash + livretOn(p.cash, today));
+  const livretEur = livretOn(p.cash, today);
+  const todayEur = round2(fundsValueEur + cash + livretEur);
   const flows = flowsOf(p);
   const newMoneyEur = round2(flows.reduce((s, f) => s + f.amountEur, 0));
   const heldCost = Object.values(costBasis(p.trades)).reduce((s, x) => s + x, 0);
@@ -53,7 +60,7 @@ export function moneyBreakdown(p: Portfolio, fundsValueEur: number, today: strin
   const earlierEur = Math.abs(movedIn - earlyNewMoney) >= 0.005 ? round2(movedIn - earlyNewMoney) : 0;
   const parts = newMoneyEur + stockGainEur + dividendsEur + livret.interestEur + currencyEur + earlierEur;
   return {
-    todayEur, newMoneyEur, stockGainEur, stockGainPct: heldCost > 0 ? (stockGainEur / heldCost) * 100 : null,
+    todayEur, fundsEur: round2(fundsValueEur), ibkrCashEur: cash, ibkrEur: round2(fundsValueEur + cash), livretEur, newMoneyEur, stockGainEur, stockGainPct: heldCost > 0 ? (stockGainEur / heldCost) * 100 : null,
     dividendsEur, interestEur: livret.interestEur, currencyEur, firstFlowDate: flows[0]?.date ?? null, earlierEur,
     otherEur: round2(todayEur - parts), resultEur: round2(todayEur - newMoneyEur),
   };

@@ -56,3 +56,14 @@ describe('closedHistory', () => {
   });
   it('is null without closed rows', () => expect(closedHistory({ ...p, deposits: [] })).toBeNull());
 });
+
+describe('today split by account', () => {
+  it('shows the IBKR account apart from the Livret Bleu', () => {
+    const b = moneyBreakdown(p, FUNDS, '2026-10-17');
+    expect(b.fundsEur).toBe(38011);
+    expect(b.ibkrCashEur).toBeCloseTo(91.21, 2);
+    expect(b.ibkrEur).toBeCloseTo(38011 + 91.21, 2);
+    expect(b.livretEur).toBe(3859.7);
+    expect(b.ibkrEur + b.livretEur).toBeCloseTo(b.todayEur, 2);
+  });
+});

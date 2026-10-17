@@ -40,7 +40,10 @@ export function Breakdown({ b, closed }: { b: MoneyBreakdown; closed?: ClosedHis
           </tr>
         ))}
         <tr className="border-t-2 border-foreground/30">
-          <td className="py-2 pr-4 font-black">Today</td>
+          <td className="py-2 pr-4">
+            <span className="font-black">Today</span>
+            <div className="text-xs text-foreground/45">IBKR account {money(b.ibkrEur, 'EUR')} + Livret Bleu {money(b.livretEur, 'EUR')}</div>
+          </td>
           <td className="text-right font-black">{money(b.todayEur, 'EUR')}</td>
         </tr>
       </tbody>
