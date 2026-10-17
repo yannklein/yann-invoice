@@ -58,3 +58,18 @@ describe('fetchSeries', () => {
     expect(await fetchSeries('NOPE.XX', '2025-10-01', '2025-10-03')).toBeNull();
   });
 });
+
+describe('latest price from the chart meta', () => {
+  const at = (date: string) => Date.parse(`${date}T13:00:00Z`) / 1000 - 7200;
+  it('adds the live price when it is newer than the last daily close', () => {
+    const j = structuredClone(fixture);
+    Object.assign(j.chart.result[0].meta, { regularMarketPrice: 116.5, regularMarketTime: at('2025-10-06') });
+    const s = parseYahooChart(j)!;
+    expect(s.points.at(-1)).toEqual({ date: '2025-10-06', close: 116.5, adj: 116.5 });
+  });
+  it('ignores a stale or missing live price', () => {
+    const j = structuredClone(fixture);
+    Object.assign(j.chart.result[0].meta, { regularMarketPrice: 109.58, regularMarketTime: at('2024-01-19') });
+    expect(parseYahooChart(j)!.points.map((p) => p.date)).toEqual(['2025-10-01', '2025-10-03']);
+  });
+});

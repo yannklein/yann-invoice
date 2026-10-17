@@ -48,11 +48,16 @@ describe('flowsOf', () => {
     const stmt = parseIbkrCsv(readFileSync('tests/fixtures/ibkr-activity.csv', 'utf8'));
     const imported = buildImport(stmt, { trades: [], deposits: [], dividends: [], symbols: DEFAULT_SYMBOLS, plan: DEFAULT_PLAN }, {});
     const f = flowsOf({ deposits: [...SEED_DEPOSITS, ...imported.deposits], cash: SEED_CASH });
-    expect(f.map((x) => x.date)).toEqual(SEED_DEPOSITS.map((d) => d.date));
-    expect(f.reduce((s, x) => s + x.amountEur, 0)).toBeCloseTo(34312.3, 2);
+    // Rakuten is closed history; IBKR deposits and the Livret Bleu opening are money put in; fx rows are not.
+    expect(f.map((x) => x.date)).toEqual(['2026-01-07', '2026-01-29', '2026-01-30', '2026-02-02', '2026-06-30', '2026-07-05']);
+    expect(f.reduce((s, x) => s + x.amountEur, 0)).toBeCloseTo(12700 + 4559.7, 2);
+  });
+  it('counts money taken out of the Livret Bleu as a negative flow', () => {
+    const f = flowsOf({ deposits: [], cash: [{ date: '2026-07-05', deposit: 0, balance: 4559.7, note: '' }, { date: '2026-10-17', deposit: 0, balance: 3859.7, note: '' }] });
+    expect(f).toEqual([{ date: '2026-10-17', amountEur: -700 }]);
   });
   it('merges same-day deposits and adds Livret Bleu deposits', () => {
-    const d = (amountEur: number): Deposit => ({ ...SEED_DEPOSITS[0], key: String(amountEur), amountEur });
+    const d = (amountEur: number): Deposit => ({ ...SEED_DEPOSITS[0], kind: 'new', key: String(amountEur), amountEur });
     const f = flowsOf({ deposits: [d(10), d(20)], cash: [{ date: '2023-01-01', deposit: 50, balance: 50, note: '' }] });
     expect(f).toEqual([{ date: '2022-12-01', amountEur: 30 }, { date: '2023-01-01', amountEur: 50 }]);
   });

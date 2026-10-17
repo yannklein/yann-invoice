@@ -1,4 +1,4 @@
-import { holdings, ibkrCashEur, livretOn } from './holdings';
+import { holdings, ibkrCashEur, livretMoves, livretOn } from './holdings';
 import { priceOn, type PriceSeries } from './prices';
 import { round2, type Portfolio } from './types';
 
@@ -15,12 +15,12 @@ export interface SeriesPoint {
 /** Yahoo symbol → series already converted to EUR. */
 export type EurSeries = Record<string, PriceSeries>;
 
-/** New money only: `kind: 'new'` deposits plus Livret Bleu deposits, one flow per day, ascending. */
+/** New money only: `kind: 'new'` deposits plus Livret Bleu deposits and withdrawals, one flow per day, ascending. */
 export function flowsOf(p: Pick<Portfolio, 'deposits' | 'cash'>): Flow[] {
   const byDay = new Map<string, number>();
   const add = (date: string, x: number) => byDay.set(date, (byDay.get(date) ?? 0) + x);
   for (const d of p.deposits) if (d.kind === 'new') add(d.date, d.amountEur);
-  for (const c of p.cash) if (c.deposit) add(c.date, c.deposit);
+  for (const f of livretMoves(p.cash).flows) add(f.date, f.amountEur);
   return [...byDay].sort(([a], [b]) => a.localeCompare(b)).map(([date, x]) => ({ date, amountEur: round2(x) }));
 }
 

@@ -80,13 +80,13 @@ describe('buildView: legends', () => {
   it('runs every benchmark on the new-money flows', () => {
     const bench: Record<string, PriceSeries | null> = Object.fromEntries(DEFAULT_BENCHMARKS.map((b) => [b.yahoo, { ...series(b.yahoo, 10), points: [{ date: '2022-11-30', close: 10, adj: 10 }] }]));
     bench['BRK-B'] = { ...bench['BRK-B']!, currency: 'USD' };
-    const v = buildView(portfolio({ deposits: SEED_DEPOSITS }), { ...prices, ...bench }, { '2022-11-30': { USD: 1.25 } }, TODAY, null);
+    const v = buildView(portfolio({ deposits: SEED_DEPOSITS.map((d) => ({ ...d, kind: 'new' as const })) }), { ...prices, ...bench }, { '2022-11-30': { USD: 1.25 } }, TODAY, null);
     expect(v.legends.map((l) => l.name)).toEqual(['Hallam EU', 'Hallam SRI', 'Hallam all-in-one', 'Buffett 90/10', 'All-Weather', 'Permanent', 'All-in Berkshire']);
     const hallam = v.legends[0];
     expect(hallam.points[0].date).toBe('2022-12-01');
-    expect(hallam.valueEur).toBeCloseTo(34312.3, 1); // flat prices: worth exactly what went in
-    expect(v.investedEur).toBeCloseTo(34312.3, 1);
-    expect(v.legends.at(-1)!.valueEur).toBeCloseTo(34312.3, 1); // USD converted at a flat rate
+    expect(hallam.valueEur).toBeCloseTo(29970.38, 1); // flat prices: worth exactly what went in
+    expect(v.investedEur).toBeCloseTo(29970.38, 1);
+    expect(v.legends.at(-1)!.valueEur).toBeCloseTo(29970.38, 1); // USD converted at a flat rate
   });
 });
 
@@ -98,5 +98,16 @@ describe('empty portfolio view', () => {
     expect(v.legends.every((l) => l.points.length === 0 && l.valueEur === null)).toBe(true);
     expect(v.round.lines.every((l) => l.buyEur >= 0)).toBe(true);
     expect(allFinite(v)).toBe(true);
+  });
+});
+
+describe('buildView: breakdown', () => {
+  it('uses the same totals as the page stats', () => {
+    const cash = { key: 'd', date: '2026-02-01', currency: 'EUR' as const, amount: 91, amountEur: 91, source: 'ibkr' as const, kind: 'internal' as const, note: '' };
+    const v = buildView(portfolio({ deposits: [cash, ...SEED_DEPOSITS] }), prices, {}, TODAY, null);
+    expect(v.breakdown.todayEur).toBe(v.valueEur);
+    expect(v.breakdown.newMoneyEur).toBe(v.investedEur);
+    const b = v.breakdown;
+    expect(b.newMoneyEur + b.stockGainEur + b.dividendsEur + b.interestEur + b.currencyEur + b.earlierEur + b.otherEur).toBeCloseTo(b.todayEur, 2);
   });
 });

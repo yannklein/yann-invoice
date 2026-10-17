@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="teal" cx="10%" cy="40%" r="65%"><stop offset="0" stop-color="#0d6e68"/><stop offset="1" stop-color="#0d6e68" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blue" cx="85%" cy="5%" r="60%"><stop offset="0" stop-color="#0e3d7a"/><stop offset="1" stop-color="#0e3d7a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="magenta" cx="70%" cy="90%" r="55%"><stop offset="0" stop-color="#7a1040"/><stop offset="1" stop-color="#7a1040" stop-opacity="0"/></radialGradient>
+    <radialGradient id="amber" cx="100%" cy="55%" r="40%"><stop offset="0" stop-color="#7a5208"/><stop offset="1" stop-color="#7a5208" stop-opacity="0"/></radialGradient>
+    <radialGradient id="indigo" cx="15%" cy="100%" r="50%"><stop offset="0" stop-color="#2d2880"/><stop offset="1" stop-color="#2d2880" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#06080f"/>
+  <g>
+    <rect width="64" height="64" rx="14" fill="url(#teal)"/>
+    <rect width="64" height="64" rx="14" fill="url(#blue)"/>
+    <rect width="64" height="64" rx="14" fill="url(#magenta)"/>
+    <rect width="64" height="64" rx="14" fill="url(#amber)"/>
+    <rect width="64" height="64" rx="14" fill="url(#indigo)"/>
+  </g>
+  <g fill="#f0ede8">
+    <path d="M7 16h9.2l4.8 9.2 4.8-9.2H35l-10 18.4V48h-8V34.4z"/>
+    <path d="M38 16h20v7.5H46v5.3h10.5v7.4H46V48h-8z"/>
+  </g>
+</svg>

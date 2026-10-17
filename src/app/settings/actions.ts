@@ -14,8 +14,8 @@ import { parseSheetId, runImport } from '@/lib/shared/store';
 export async function runSetupAction() {
   const g = await getGoogle();
   await runSetup(g);
-  revalidatePath('/');
-  redirect('/');
+  revalidatePath('/', 'layout');
+  redirect('/dashboard');
 }
 
 export async function saveSettingsAction(formData: FormData) {
@@ -30,8 +30,8 @@ export async function saveSettingsAction(formData: FormData) {
 export async function fullResyncAction() {
   const g = await getGoogle();
   await syncIndex(g, await requireIds(g), { full: true });
-  revalidatePath('/');
-  redirect('/');
+  revalidatePath('/', 'layout');
+  redirect('/invoices');
 }
 
 export async function previewSharedImportAction(formData: FormData) {

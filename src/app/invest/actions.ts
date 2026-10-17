@@ -8,9 +8,9 @@ import { buildImport, type ImportResult } from '@/lib/invest/importPlan';
 import { isDate } from '@/lib/invest/rows';
 import { addCashRow, appendImport, findPortfolioId, readPortfolio, savePlanValue, sriForNewBuys } from '@/lib/invest/store';
 
-export interface UploadPreview extends Omit<ImportResult, 'trades' | 'deposits' | 'dividends' | 'newSymbols'> {
+export interface UploadPreview extends Omit<ImportResult, 'trades' | 'deposits' | 'dividends' | 'newSymbols' | 'corrections'> {
   account: string;
-  counts: { trades: number; transfers: number; deposits: number; newMoneyDeposits: number; dividends: number; newSymbols: string[] };
+  counts: { trades: number; transfers: number; deposits: number; newMoneyDeposits: number; dividends: number; corrections: number; newSymbols: string[]; currencyEur: number };
 }
 
 type Failure = { error: string };
@@ -23,7 +23,10 @@ async function prepare(csv: string): Promise<Failure | { g: Google; id: string; 
   const stmt = parseIbkrCsv(csv);
   if (!stmt.account) return { error: 'That file is not an IBKR Activity Statement (CSV).' };
   const portfolio = await readPortfolio(g.sheets, id);
-  const foreign = [...stmt.trades, ...stmt.transfers, ...stmt.deposits, ...stmt.dividends].filter((r) => r.currency !== 'EUR').map((r) => r.date).sort();
+  const foreign = [...stmt.trades, ...stmt.transfers, ...stmt.deposits, ...stmt.dividends, ...stmt.withholding].filter((r) => r.currency !== 'EUR').map((r) => r.date);
+  // A closing balance in yen needs that day's rate too.
+  if (stmt.baseCurrency && stmt.baseCurrency !== 'EUR' && stmt.period) foreign.push(stmt.period.to);
+  foreign.sort();
   const from = foreign.length ? new Date(Date.parse(`${foreign[0]}T00:00:00Z`) - 7 * 86_400_000).toISOString().slice(0, 10) : null;
   const rates = from ? await fetchDailyRates(from, foreign.at(-1)!) : {};
   return { g, id, result: buildImport(stmt, portfolio, rates), account: stmt.account };
@@ -32,16 +35,18 @@ async function prepare(csv: string): Promise<Failure | { g: Google; id: string; 
 export async function previewUploadAction(csv: string): Promise<UploadPreview | Failure> {
   const r = await prepare(csv);
   if ('error' in r) return r;
-  const { trades, deposits, dividends, newSymbols, ...rest } = r.result;
+  const { trades, deposits, dividends, newSymbols, corrections, ...rest } = r.result;
   return {
     ...rest,
     account: r.account,
     counts: {
       trades: trades.filter((t) => t.source === 'ibkr').length,
       transfers: trades.filter((t) => t.source === 'transfer').length,
-      deposits: deposits.length,
+      deposits: deposits.filter((d) => d.kind !== 'fx').length,
       newMoneyDeposits: deposits.filter((d) => d.kind === 'new').length,
+      currencyEur: deposits.filter((d) => d.kind === 'fx').reduce((a, d) => a + d.amountEur, 0),
       dividends: dividends.length,
+      corrections: corrections.length,
       newSymbols: newSymbols.map((s) => s.symbol),
     },
   };
@@ -53,7 +58,7 @@ export async function confirmUploadAction(csv: string): Promise<{ ok: true; adde
   if (r.result.missingRates) return { error: RATES_DOWN };
   await appendImport(r.g.sheets, r.id, r.result);
   revalidatePath('/invest');
-  return { ok: true, added: r.result.trades.length + r.result.deposits.length + r.result.dividends.length };
+  return { ok: true, added: r.result.trades.length + r.result.deposits.length + r.result.dividends.length + r.result.corrections.length };
 }
 
 export async function savePerBuyAction(amount: number): Promise<void> {

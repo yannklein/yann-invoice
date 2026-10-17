@@ -1,0 +1,124 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,BrokerName,Interactive Brokers Securities Japan Inc.
+Statement,Data,BrokerAddress,
+Statement,Data,Title,Activity Statement
+Statement,Data,Period,"March 5, 2025 - March 5, 2026"
+Statement,Data,WhenGenerated,"2026-10-18, 00:15:11 JST"
+Account Information,Header,Field Name,Field Value
+Account Information,Data,Name,Test Investor
+Account Information,Data,Account,U0000002
+Account Information,Data,Account Type,Individual
+Account Information,Data,Customer Type,Individual
+Account Information,Data,Account Capabilities,Cash
+Account Information,Data,Base Currency,JPY
+Net Asset Value,Header,Asset Class,Prior Total,Current Long,Current Short,Current Total,Change
+Net Asset Value,Data,Cash ,0,0.732175126,0,0.732175126,0.732175126
+Net Asset Value,Data,Total,0,0.732175126,0,0.732175126,0.732175126
+Net Asset Value,Header,Time Weighted Rate of Return
+Net Asset Value,Data,25.832562479%
+Change in NAV,Header,Field Name,Field Value
+Change in NAV,Data,Starting Value,0
+Change in NAV,Data,Mark-to-Market,601483.05304198
+Change in NAV,Data,Deposits & Withdrawals,3443380
+Change in NAV,Data,Position Transfers,-4056561.8992
+Change in NAV,Data,Dividends,18428.6502
+Change in NAV,Data,Withholding Tax,-3734.4175
+Change in NAV,Data,Change in Dividend Accruals,-69.4099
+Change in NAV,Data,Other Fees,-272.240280376
+Change in NAV,Data,Commissions,-2722.402795045
+Change in NAV,Data,Other FX Translations,69.4099
+Change in NAV,Data,Ending Value,0.732175126
+Total P/L for Statement Period,,,,,,,,,,,,613182.631372942,
+Cash Report,Header,Currency Summary,Currency,Total,
+Cash Report,Data,Starting Cash,Base Currency Summary,0,
+Cash Report,Data,Commissions,Base Currency Summary,-2722.402795045,
+Cash Report,Data,Deposits,Base Currency Summary,3476348,
+Cash Report,Data,Withdrawals,Base Currency Summary,-32968,
+Cash Report,Data,Dividends,Base Currency Summary,18428.6502,
+Cash Report,Data,Trades (Sales),Base Currency Summary,3459489.321498293,
+Cash Report,Data,Trades (Purchase),Base Currency Summary,-6915144.650649494,
+Cash Report,Data,Other Fees,Base Currency Summary,-272.240280376,
+Cash Report,Data,Withholding Tax,Base Currency Summary,-3734.4175,
+Cash Report,Data,Cash FX Translation Gain/Loss,Base Currency Summary,576.4717,
+Cash Report,Data,Ending Cash,Base Currency Summary,0.732175126,
+Cash Report,Data,Ending Settled Cash,Base Currency Summary,0.732175126,
+Cash Report,Data,Starting Cash,EUR,0,
+Cash Report,Data,Ending Cash,EUR,0,
+Cash Report,Data,Starting Cash,JPY,0,
+Cash Report,Data,Deposits,JPY,3476348,
+Cash Report,Data,Withdrawals,JPY,-32968,
+Cash Report,Data,Ending Cash,JPY,0.732175126,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,EUR,IMEU,"2025-04-10, 16:17:28",39.3901,31.479950482,30.74,-1239.9983975,-4.5,1244.4983975,0,-29.1467,FPA;O;P
+Trades,Data,Order,Stocks,EUR,IMEU,"2025-09-29, 21:23:57",119,34.535,34.54,-4109.67,-3,4112.67,0,0.59,O
+Trades,SubTotal,,Stocks,EUR,IMEU,,158.3901,,,-5349.6683975,-7.5,5357.1683975,0,-28.5567,
+Trades,Data,Order,Stocks,EUR,IWRD,"2025-04-08, 16:04:02",52.9514,64.814107767,65.482,-3431.999746,-3,3434.999746,0,35.3639,FPA;O;P
+Trades,Data,Order,Stocks,EUR,IWRD,"2025-09-29, 21:13:55",145.7393,78.015994927,77.84,-11369.9964895,-5.684998245,11375.681487745,0,-25.6494,FPA;O;P
+Trades,SubTotal,,Stocks,EUR,IWRD,,198.6907,,,-14801.9962355,-8.684998245,14810.681233745,0,9.7145,
+Trades,Total,,Stocks,EUR,,,,,,-20151.664633,-16.184998245,20167.849631245,0,-18.8422,
+Trades,Total,,Stocks,JPY,,,,,,-3448255.582475595,-2722.402794174,3450977.985269769,0,-3413.662467,
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,,Proceeds,Comm in JPY,,,MTM in JPY,Code
+Trades,Data,Order,Forex,JPY,EUR.JPY,"2025-04-08, 16:04:03","3,371",161.674,,-545003.054,0,,,-4631.754,AFx
+Trades,Data,Order,Forex,JPY,EUR.JPY,"2025-04-10, 16:17:29","1,240",161.394,,-200128.56,0,,,491.04,AFx
+Trades,Data,Order,Forex,JPY,EUR.JPY,"2025-09-29, 21:13:55","11,296",174.463,,-1970734.048,0,,,-2293.088,AFx
+Trades,Data,Order,Forex,JPY,EUR.JPY,"2025-09-29, 21:23:58","4,112",174.473,,-717432.976,0,,,-875.856,AFx
+Trades,Data,Order,Forex,JPY,EUR.JPY,"2026-01-15, 06:07:55",-15,184.596,,2768.94,0,,,1.29,AFx
+Trades,SubTotal,,Forex,JPY,EUR.JPY,,20131.77813106,,,-3451931.852673374,0,,,-7403.954025,
+Trades,Data,Order,Forex,JPY,USD.JPY,"2026-01-15, 06:07:55",-53,158.53,,8402.09,0,,,4.24,AFx
+Trades,SubTotal,,Forex,JPY,USD.JPY,,-53.95,,,8552.5848485,0,,,4.207348,
+Trades,Total,,Forex,JPY,,,,,,-3443379.267824874,0,,,-7399.746677,
+Transfers,Header,Asset Category,Currency,Symbol,Date,Type,Direction,Xfer Company,Xfer Account,Qty,Xfer Price,Market Value,Realized P/L,Cash Amount,Code
+Transfers,Data,Stocks,EUR,IMEU,2026-01-27,Internal,Out,--,U0000001,-158.3901,--,"-5,988.73",0.00,0.00,
+Transfers,Data,Stocks,EUR,IWRD,2026-01-27,Internal,Out,--,U0000001,-198.6907,--,"-16,144.41",0.00,0.00,
+Transfers,Data,Total,,,,,,,,,,-22133.14,0,0,
+Transfers,Data,Total in JPY,,,,,,,,,,-4056561.8992,0,0,
+Deposits & Withdrawals,Header,Currency,Settle Date,Description,Amount
+Deposits & Withdrawals,Data,JPY,2025-03-06,Electronic Fund Transfer,500000
+Deposits & Withdrawals,Data,JPY,2025-04-08,Electronic Fund Transfer,500000
+Deposits & Withdrawals,Data,JPY,2025-05-20,Electronic Fund Transfer,100000
+Deposits & Withdrawals,Data,JPY,2025-05-27,Electronic Fund Transfer,360000
+Deposits & Withdrawals,Data,JPY,2025-06-10,Electronic Fund Transfer,2000000
+Deposits & Withdrawals,Data,JPY,2026-01-15,Electronic Fund Transfer,16348
+Deposits & Withdrawals,Data,JPY,2026-01-15,Disbursement Initiated by Test Investor,-16348
+Deposits & Withdrawals,Data,JPY,2026-01-21,Disbursement Initiated by Test Investor,-16620
+Deposits & Withdrawals,Data,Total,,,3443380
+Fees,Header,Subtitle,Currency,Date,Description,Amount
+Fees,Data,Other Fees,EUR,2025-04-09,"Consumption Tax (Commissions & Fees, Taxable Amount: 3.00)",-0.3
+Fees,Data,Total,,,,-1.618499824
+Dividends,Header,Currency,Date,Description,Amount
+Dividends,Data,EUR,2025-05-30,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3738 per Share (Mixed Income),14.72
+Dividends,Data,EUR,2025-08-28,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3462 per Share (Mixed Income),13.64
+Dividends,Data,EUR,2025-11-27,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.1193 per Share (Mixed Income),18.9
+Dividends,Data,Total,,,47.26
+Dividends,Data,Total in JPY,,,8173.6294
+Dividends,Data,USD,2025-06-26,IWRD(IE00B0M62Q58) Cash Dividend USD 0.4101 per Share (Mixed Income),21.72
+Dividends,Data,USD,2025-09-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.1549 per Share (Mixed Income),8.2
+Dividends,Data,USD,2025-12-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.19 per Share (Mixed Income),37.75
+Dividends,Data,Total,,,67.67
+Dividends,Data,Total in JPY,,,10255.0208
+Dividends,Data,Total Dividends in JPY,,,18428.6502
+Withholding Tax,Header,Currency,Date,Description,Amount,Code
+Withholding Tax,Data,EUR,2025-05-30,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3738 per Share - JP LOCAL Tax,-0.73,
+Withholding Tax,Data,EUR,2025-05-30,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3738 per Share - JP NATIONAL Tax,-2.25,
+Withholding Tax,Data,EUR,2025-08-28,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3462 per Share - JP LOCAL Tax,-0.68,
+Withholding Tax,Data,EUR,2025-08-28,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.3462 per Share - JP NATIONAL Tax,-2.08,
+Withholding Tax,Data,EUR,2025-11-27,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.1193 per Share - JP LOCAL Tax,-0.94,
+Withholding Tax,Data,EUR,2025-11-27,IMEU(IE00B1YZSC51) Cash Dividend EUR 0.1193 per Share - JP NATIONAL Tax,-2.89,
+Withholding Tax,Data,Total,,,-9.57,
+Withholding Tax,Data,Total in JPY,,,-1655.1671,
+Withholding Tax,Data,USD,2025-06-26,IWRD(IE00B0M62Q58) Cash Dividend USD 0.4101 per Share - JP LOCAL Tax,-1.08,
+Withholding Tax,Data,USD,2025-06-26,IWRD(IE00B0M62Q58) Cash Dividend USD 0.4101 per Share - JP NATIONAL Tax,-3.32,
+Withholding Tax,Data,USD,2025-09-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.1549 per Share - JP LOCAL Tax,-0.41,
+Withholding Tax,Data,USD,2025-09-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.1549 per Share - JP NATIONAL Tax,-1.25,
+Withholding Tax,Data,USD,2025-12-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.19 per Share - JP LOCAL Tax,-1.88,
+Withholding Tax,Data,USD,2025-12-25,IWRD(IE00B0M62Q58) Cash Dividend USD 0.19 per Share - JP NATIONAL Tax,-5.78,
+Withholding Tax,Data,Total,,,-13.72,
+Withholding Tax,Data,Total in JPY,,,-2079.2504,
+Withholding Tax,Data,Total Withholding Tax in JPY,,,-3734.4175,
+Financial Instrument Information,Header,Asset Category,Symbol,Description,Conid,Security ID,Underlying,Listing Exch,Multiplier,Type,Code
+Financial Instrument Information,Data,Stocks,IMEU,ISHARES CORE MSCI EUROPE,45998497,IE00B1YZSC51,IMEU,AEB,1,ETF,
+Financial Instrument Information,Data,Stocks,IWRD,ISHARES MSCI WORLD,37036625,IE00B0M62Q58,IWRD,AEB,1,ETF,
+Codes,Header,Code,Meaning,Code (Cont.),Meaning (Cont.)
+Codes,Data,AFx,AutoFX conversion resulting from trading
+Notes/Legal Notes,Header,Type,Note
+Notes/Legal Notes,Data,Notes,Trade execution times are displayed in Japan Standard Time.

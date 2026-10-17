@@ -32,12 +32,12 @@ export function UploadCard() {
       if (!csv) return;
       const r = await confirmUploadAction(csv);
       if ('error' in r) return setMessage(r.error);
-      setMessage(`Imported ${r.added} rows.`);
+      setMessage(`Imported or corrected ${r.added} rows.`);
       setPreview(null);
       router.refresh();
     });
 
-  const nothingNew = preview && preview.counts.trades + preview.counts.transfers + preview.counts.deposits + preview.counts.dividends === 0;
+  const nothingNew = preview && preview.counts.trades + preview.counts.transfers + preview.counts.deposits + preview.counts.dividends + preview.counts.corrections === 0 && preview.counts.currencyEur === 0;
   return (
     <div className="space-y-3 text-sm">
       <label className="eyebrow block">After buying: upload the IBKR Activity Statement (CSV)</label>
@@ -54,6 +54,7 @@ export function UploadCard() {
             <li>{preview.counts.trades} trades, {preview.counts.transfers} transfers ({preview.duplicates.trades} already in the sheet)</li>
             <li>{preview.counts.deposits} deposits, {preview.counts.newMoneyDeposits} counted as new money ({preview.duplicates.deposits} already in the sheet)</li>
             <li>{preview.counts.dividends} dividends ({preview.duplicates.dividends} already in the sheet)</li>
+            {preview.counts.corrections > 0 && <li>{preview.counts.corrections} rows already in the sheet will be corrected (e.g. transferred shares get their original cost)</li>}
             {preview.conversions > 0 && <li>{preview.conversions} currency conversions ignored</li>}
             {preview.counts.newSymbols.length > 0 && <li>New symbols added to the Symbols tab: {preview.counts.newSymbols.join(', ')}</li>}
           </ul>
@@ -62,8 +63,10 @@ export function UploadCard() {
               Holdings differ from the statement: {preview.positionMismatches.map((m) => `${m.symbol} sheet ${m.sheet} vs statement ${m.statement}`).join('; ')}.
             </p>
           )}
-          {preview.cashDiffEur !== null && Math.abs(preview.cashDiffEur) >= 5 && (
-            <p className="text-amber-400">Cash differs from the statement by {eur(preview.cashDiffEur)}.</p>
+          {preview.counts.currencyEur !== 0 && (
+            <p className="text-foreground/70">
+              Currency moves and fees booked so cash matches the statement: {eur(preview.counts.currencyEur)}.
+            </p>
           )}
           {preview.missingRates && <p className="text-destructive">Exchange rates unavailable — nothing was imported. Try again later.</p>}
           {preview.skipped.length > 0 && (

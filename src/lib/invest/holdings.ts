@@ -11,18 +11,42 @@ export function holdings(trades: Trade[], until?: string): Record<string, number
   return q;
 }
 
-/** Uninvested IBKR cash in EUR: IBKR deposits − IBKR trade costs + dividends. Sheet deposits and transfers are not cash. */
-export function ibkrCashEur(p: Pick<Portfolio, 'trades' | 'deposits' | 'dividends'>, until?: string): number {
-  const on = (d: string) => !until || d <= until;
-  const deposits = p.deposits.filter((d) => d.source === 'ibkr' && on(d.date)).reduce((s, d) => s + d.amountEur, 0);
-  const spent = p.trades.filter((t) => t.source === 'ibkr' && on(t.date)).reduce((s, t) => s + t.amountEur, 0);
-  const dividends = p.dividends.filter((d) => on(d.date)).reduce((s, d) => s + d.amountEur, 0);
+/**
+ * Uninvested IBKR cash in EUR: IBKR deposits − IBKR trade costs + dividends. Sheet deposits and transfers are not cash.
+ * `account` limits it to one account (rows are keyed `account|…`).
+ */
+export function ibkrCashEur(p: Pick<Portfolio, 'trades' | 'deposits' | 'dividends'>, until?: string, account?: string): number {
+  const mine = (key: string) => !account || key.startsWith(`${account}|`);
+  const on = (d: string, key = '') => (!until || d <= until) && mine(key);
+  const deposits = p.deposits.filter((d) => d.source === 'ibkr' && on(d.date, d.key)).reduce((s, d) => s + d.amountEur, 0);
+  const spent = p.trades.filter((t) => t.source === 'ibkr' && on(t.date, t.key)).reduce((s, t) => s + t.amountEur, 0);
+  const dividends = p.dividends.filter((d) => on(d.date, d.key)).reduce((s, d) => s + d.amountEur, 0);
   return round2(deposits - spent + dividends);
 }
 
 /** Livret Bleu balance on `date`: the latest row on or before it, else 0. */
 export function livretOn(cash: CashRow[], date: string): number {
   return cash.filter((c) => c.date <= date).sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.balance ?? 0;
+}
+
+/**
+ * The Livret Bleu as money movements. It cannot lose value, so a balance drop beyond the deposit is money taken out;
+ * growth without a deposit is interest. The first row's balance (minus its deposit) is money moved in from elsewhere.
+ */
+export function livretMoves(cash: CashRow[]): { openingEur: number; flows: { date: string; amountEur: number }[]; interestEur: number } {
+  const rows = [...cash].sort((a, b) => a.date.localeCompare(b.date));
+  if (!rows.length) return { openingEur: 0, flows: [], interestEur: 0 };
+  const flows: { date: string; amountEur: number }[] = [];
+  if (rows[0].deposit) flows.push({ date: rows[0].date, amountEur: rows[0].deposit });
+  let interest = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const change = round2(r.balance - rows[i - 1].balance - r.deposit);
+    const net = round2(r.deposit + Math.min(0, change));
+    if (net) flows.push({ date: r.date, amountEur: net });
+    if (change > 0) interest += change;
+  }
+  return { openingEur: round2(rows[0].balance - rows[0].deposit), flows, interestEur: round2(interest) };
 }
 
 export interface SlotValue {

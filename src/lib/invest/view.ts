@@ -1,4 +1,5 @@
 import { dailyRateFor, type DailyRates } from '@/lib/fx/history';
+import { closedHistory, moneyBreakdown, type ClosedHistory, type MoneyBreakdown } from './breakdown';
 import { holdings, ibkrCashEur, livretOn, nextBuyDate, rebalance, slotValues } from './holdings';
 import type { PriceSeries } from './prices';
 import { blendedReturn, buffettHorizon, project } from './projection';
@@ -21,6 +22,10 @@ export interface InvestView {
   quips: string[];
   valueEur: number;
   investedEur: number;
+  /** Where today's money comes from; adds up to valueEur. */
+  breakdown: MoneyBreakdown;
+  /** Rakuten, kept as history outside today's money. */
+  closed: ClosedHistory | null;
   ibkrCashEur: number;
   livretEur: number;
   round: {
@@ -59,24 +64,19 @@ function inEur(s: PriceSeries | null | undefined, rates: DailyRates | null): Pri
   return points.length ? { ...s, currency: 'EUR', points } : null;
 }
 
-/** Everything the /invest page shows, from the sheet, Yahoo series (keyed by Yahoo symbol) and ECB day rates. */
-export function buildView(p: Portfolio, series: Record<string, PriceSeries | null>, rates: DailyRates | null, today: string, amountOverride: number | null): InvestView {
+/** Latest EUR price of everything held or buyable: the last Yahoo close, else the last trade price (stale). */
+export function quotesFor(
+  p: Pick<Portfolio, 'trades' | 'slots' | 'symbols'>, series: Record<string, PriceSeries | null>, rates: DailyRates | null, today: string,
+): { quotes: Quote[]; ownSeries: Record<string, PriceSeries | null>; missing: string[] } {
   const bySymbol = new Map(p.symbols.map((s) => [s.symbol, s]));
-  const missingSeries = new Set<string>();
-  const eurSeries = (yahoo: string) => {
-    const s = inEur(series[yahoo], rates);
-    if (!s) missingSeries.add(yahoo);
-    return s;
-  };
-
-  // Quotes for everything held or buyable.
-  const held = holdings(p.trades);
-  const wanted = new Set([...Object.keys(held), ...p.slots.flatMap((s) => [s.buySymbol, ...(s.sriSymbol ? [s.sriSymbol] : [])])]);
+  const missing: string[] = [];
+  const wanted = new Set([...Object.keys(holdings(p.trades)), ...p.slots.flatMap((s) => [s.buySymbol, ...(s.sriSymbol ? [s.sriSymbol] : [])])]);
   const ownSeries: Record<string, PriceSeries | null> = {};
   const quotes: Quote[] = [];
   for (const symbol of wanted) {
     const yahoo = bySymbol.get(symbol)?.yahoo;
-    const s = yahoo ? eurSeries(yahoo) : null;
+    const s = yahoo ? inEur(series[yahoo], rates) : null;
+    if (yahoo && !s) missing.push(yahoo);
     ownSeries[symbol] = s;
     const last = s?.points.at(-1);
     if (last) {
@@ -86,6 +86,20 @@ export function buildView(p: Portfolio, series: Record<string, PriceSeries | nul
     const t = p.trades.filter((x) => x.symbol === symbol && x.quantity).at(-1);
     if (t) quotes.push({ symbol, priceEur: round2(Math.abs(t.amountEur / t.quantity)), date: t.date, stale: true });
   }
+  return { quotes, ownSeries, missing };
+}
+
+/** Everything the /invest page shows, from the sheet, Yahoo series (keyed by Yahoo symbol) and ECB day rates. */
+export function buildView(p: Portfolio, series: Record<string, PriceSeries | null>, rates: DailyRates | null, today: string, amountOverride: number | null): InvestView {
+  const bySymbol = new Map(p.symbols.map((s) => [s.symbol, s]));
+  const { quotes, ownSeries, missing } = quotesFor(p, series, rates, today);
+  const missingSeries = new Set(missing);
+  const eurSeries = (yahoo: string) => {
+    const s = inEur(series[yahoo], rates);
+    if (!s) missingSeries.add(yahoo);
+    return s;
+  };
+  const held = holdings(p.trades);
   const quote = (symbol: string) => quotes.find((q) => q.symbol === symbol);
 
   // Value now.
@@ -162,7 +176,7 @@ export function buildView(p: Portfolio, series: Record<string, PriceSeries | nul
 
   return {
     today, nextBuy: nextBuyDate(today, p.plan.buyMonths), lazyDays: lazyStreak(today, lastTradeDate), badges: badges(ctx), quips: quips(ctx),
-    valueEur, investedEur, ibkrCashEur: cash, livretEur: livret,
+    valueEur, investedEur, breakdown: moneyBreakdown(p, holdingsValue, today), closed: closedHistory(p), ibkrCashEur: cash, livretEur: livret,
     round: { amountEur, fromCashEur, lines, driftNote: driftPts.some((d) => Math.abs(d) > 10) },
     unassigned, quotes, sri, sriSharePct, longGame, legends, you,
     trades: p.trades, invalidRows: p.invalidRows, missingSeries: [...missingSeries],

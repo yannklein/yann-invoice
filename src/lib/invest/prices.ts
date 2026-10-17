@@ -17,7 +17,7 @@ const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x > 
 /** Yahoo v8 chart JSON → price series (dates in the exchange's local day), or null when it holds no usable points. */
 export function parseYahooChart(json: unknown): PriceSeries | null {
   const r = (json as { chart?: { result?: unknown[] | null } } | null)?.chart?.result?.[0] as
-    | { meta?: { symbol?: string; currency?: string; gmtoffset?: number }; timestamp?: number[]; indicators?: { quote?: { close?: unknown[] }[]; adjclose?: { adjclose?: unknown[] }[] } }
+    | { meta?: { symbol?: string; currency?: string; gmtoffset?: number; regularMarketPrice?: unknown; regularMarketTime?: number }; timestamp?: number[]; indicators?: { quote?: { close?: unknown[] }[]; adjclose?: { adjclose?: unknown[] }[] } }
     | undefined;
   const ts = r?.timestamp ?? [];
   const close = r?.indicators?.quote?.[0]?.close ?? [];
@@ -30,6 +30,13 @@ export function parseYahooChart(json: unknown): PriceSeries | null {
     const date = new Date((t + offset) * 1000).toISOString().slice(0, 10);
     points.push({ date, close: c, adj: num(adj?.[i]) ?? c });
   });
+  // Yahoo often leaves the latest day's close empty for a while; its live price fills the gap when it is newer.
+  const live = num(r?.meta?.regularMarketPrice);
+  const liveTime = r?.meta?.regularMarketTime;
+  if (live !== null && typeof liveTime === 'number') {
+    const date = new Date((liveTime + offset) * 1000).toISOString().slice(0, 10);
+    if (points.length && date > points.at(-1)!.date) points.push({ date, close: live, adj: live });
+  }
   if (!points.length || !r?.meta?.symbol) return null;
   return { yahoo: r.meta.symbol, currency: r.meta.currency ?? '', points };
 }

@@ -37,6 +37,7 @@ describe('parseIbkrCsv on the 2026 YTD statement', () => {
   });
   it('reads ending positions, cash and instruments', () => {
     expect(s.endingPositions).toEqual({ CSBGE3: 66, IMEU: 158.3901, IWRD: 256.1369 });
+    expect(s.endingCostBasis).toEqual({ CSBGE3: 7675.01559, IMEU: 5357.168398, IWRD: 20012.672334 });
     expect(s.endingCashEur).toBeCloseTo(91.2073, 4);
     expect(s.instruments.CSBGE3).toMatchObject({ isin: 'IE00B3VTMJ91', exchange: 'EBS' });
     expect(s.skipped).toEqual([]);
@@ -59,5 +60,28 @@ describe('bad input', () => {
   });
   it('returns an empty statement for empty input', () => {
     expect(parseIbkrCsv('')).toMatchObject({ account: '', period: null, trades: [], deposits: [], dividends: [], transfers: [], conversions: 0, endingCashEur: null, skipped: [] });
+  });
+});
+
+describe('parseIbkrCsv on the IBKR Japan statement', () => {
+  const jp = parseIbkrCsv(readFileSync('tests/fixtures/ibkr-japan.csv', 'utf8'));
+  it('reads the base currency and the closing cash in it', () => {
+    expect(jp.baseCurrency).toBe('JPY');
+    expect(jp.endingCashBase).toBeCloseTo(0.732175, 5);
+    expect(s.baseCurrency).toBe('EUR');
+    expect(s.endingCashBase).toBeCloseTo(91.207325, 5);
+  });
+  it('reads buys, transfers out and deposits with withdrawals', () => {
+    expect(jp.trades.map((t) => [t.symbol, t.quantity])).toEqual([['IMEU', 39.3901], ['IMEU', 119], ['IWRD', 52.9514], ['IWRD', 145.7393]]);
+    expect(jp.transfers[0]).toEqual({ date: '2026-01-27', symbol: 'IMEU', currency: 'EUR', quantity: -158.3901, marketValue: -5988.73, counterparty: 'U0000001' });
+    expect(jp.deposits).toHaveLength(8);
+    expect(jp.deposits.reduce((a, d) => a + d.amount, 0)).toBe(3443380);
+    expect(jp.conversions).toBe(6);
+    expect(jp.skipped).toEqual([]);
+  });
+  it('reads withholding tax as negative amounts per dividend', () => {
+    expect(jp.withholding).toHaveLength(12);
+    expect(jp.withholding[0]).toEqual({ date: '2025-05-30', symbol: 'IMEU', isin: 'IE00B1YZSC51', currency: 'EUR', amount: -0.73 });
+    expect(jp.withholding.filter((w) => w.currency === 'USD').reduce((a, w) => a + w.amount, 0)).toBeCloseTo(-13.72, 2);
   });
 });

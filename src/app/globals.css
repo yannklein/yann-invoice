@@ -27,6 +27,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-positive: var(--positive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -68,6 +69,7 @@
   --accent: rgb(255 255 255 / 0.1);
   --accent-foreground: #f0ede8;
   --destructive: #f2768f;
+  --positive: #4fd1a5;
   --border: rgb(240 237 232 / 0.1);
   --input: rgb(240 237 232 / 0.14);
   --ring: #2bb5aa;

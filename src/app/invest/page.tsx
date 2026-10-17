@@ -13,7 +13,12 @@ import { buildView } from '@/lib/invest/view';
 import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
+import { Breakdown, sinceLabel } from './Breakdown';
+import { FundRef } from './FundRef';
+import { domicileOf } from '@/lib/invest/domicile';
 import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
+import { PurchasesChart } from './charts/PurchasesChart';
+import { purchasesByMonth } from '@/lib/invest/purchases';
 import { LegendsChart, type ChartRow, type ChartSeries } from './charts/LegendsChart';
 import { LongGame } from './LongGame';
 import { UploadCard } from './UploadCard';
@@ -26,6 +31,7 @@ const eur = (x: number) => money(x, 'EUR');
 const eurCents = (x: number) => money(x, 'EUR', true);
 const longDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const monthYear = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayMonthShort = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const minusDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
 
 export default async function InvestPage({ searchParams }: { searchParams: Promise<{ amount?: string }> }) {
@@ -70,8 +76,13 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     youApprox: pt.approx || pt === firstExact ? pt.value : null,
     invested: flows.filter((f) => f.date <= pt.date).reduce((s, f) => s + f.amountEur, 0),
   }));
-  const gain = v.valueEur - v.investedEur;
   const staleQuotes = v.quotes.filter((q) => q.stale);
+  const purchases = purchasesByMonth(p.trades, today);
+  const heldSymbols = new Set(Object.keys(holdings(p.trades)));
+  const priceDate = v.quotes.filter((q) => heldSymbols.has(q.symbol)).map((q) => q.date).sort()[0] ?? null;
+  const info = new Map(p.symbols.map((s) => [s.symbol, s]));
+  const ownFunds = [...new Set([...heldSymbols, ...p.slots.map((s) => s.buySymbol)])];
+  const notEu = ownFunds.filter((s) => !domicileOf(info.get(s)?.isin ?? '').eu);
 
   return (
     <div className="space-y-10">
@@ -98,11 +109,24 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Value" value={eur(v.valueEur)} sub="IBKR + Livret Bleu" />
-        <Stat label="New money in" value={eur(v.investedEur)} sub="since Dec 2022" />
-        <Stat label="Gain" value={`${gain >= 0 ? '+' : '−'}${eur(Math.abs(gain))}`} sub={v.investedEur ? `${Math.round((gain / v.investedEur) * 100)}% on new money` : undefined} warn={gain < 0} />
-        <Stat label="Cash in IBKR" value={eurCents(v.ibkrCashEur)} sub={`Livret Bleu ${eur(v.livretEur)}`} />
+        <Stat label="Today" value={eur(v.breakdown.todayEur)} sub={`IBKR + Livret Bleu ${eur(v.breakdown.livretEur)}`} />
+        <Stat
+          label="IBKR account"
+          value={eur(v.breakdown.ibkrEur)}
+          sub={`funds + cash ${eurCents(v.breakdown.ibkrCashEur)}${priceDate ? ` · prices of ${dayMonthShort(priceDate)}` : ''}`}
+        />
+        <Stat
+          label="Total result"
+          value={`${v.breakdown.resultEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.resultEur))}`}
+          sub={`of which stock gain ${v.breakdown.stockGainEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.stockGainEur))}`}
+          warn={v.breakdown.resultEur < 0}
+        />
+        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub={sinceLabel(v.breakdown)} />
       </div>
+
+      <Panel title="Where today's money comes from">
+        <Breakdown b={v.breakdown} closed={v.closed} />
+      </Panel>
 
       <Section title="This round">
         <Panel title="What to buy">
@@ -125,7 +149,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
                     <tr key={l.slot} className="border-t border-foreground/10">
                       <td className="py-2 font-semibold">{l.slot}</td>
                       <td>{l.nowPct}% → {l.targetPct}%</td>
-                      <td>{l.slot === 'Bonds' && l.buyEur > 0 ? `${l.symbol} or Livret Bleu` : l.symbol}</td>
+                      <td className="py-1"><FundRef symbol={l.symbol} info={info.get(l.symbol)} label={l.slot === 'Bonds' && l.buyEur > 0 ? `${l.symbol} or Livret Bleu` : undefined} /></td>
                       <td className={`text-right font-black ${l.buyEur === 0 ? 'text-foreground/30' : ''}`}>{eur(l.buyEur)}</td>
                       <td className="text-right">{l.units === null ? '—' : l.units.toFixed(4)}{l.stale && l.units !== null ? ' *' : ''}</td>
                     </tr>
@@ -134,6 +158,11 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
               </table>
             </div>
             {v.round.driftNote && <p className="text-foreground/60">Your mix has drifted more than 10 points from target. Still fine: this round&apos;s buy already steers it back, no selling needed.</p>}
+            <p className={`text-xs ${notEu.length ? 'text-amber-400' : 'text-foreground/50'}`}>
+              {notEu.length
+                ? `Not European-domiciled: ${notEu.join(', ')}. US-domiciled funds can owe US estate tax for non-US investors; prefer an Irish (IE…) UCITS version.`
+                : 'All your funds are European-domiciled UCITS ETFs (ISIN starting IE), so no US estate-tax exposure. Search the ISIN at your broker; the link opens the fund on justETF.'}
+            </p>
             <UploadCard />
           </div>
         </Panel>
@@ -150,7 +179,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
                   {s.candidate ? (
                     <p className="text-foreground/60">
                       {s.usingSri ? 'New money already goes to ' : `${s.current?.symbol ?? '?'} (${s.current?.terPct ?? '?'}%/yr) → `}
-                      {s.candidate.name} ({s.candidate.terPct ?? '?'}%/yr)
+                      <FundRef symbol={s.candidate.symbol} info={s.candidate} label={`${s.candidate.name} (${s.candidate.terPct ?? '?'}%/yr)`} />
                       {!s.usingSri && s.current?.terPct != null && s.candidate.terPct != null && s.candidate.terPct < s.current.terPct && <b> · cheaper too</b>}
                     </p>
                   ) : (
@@ -197,6 +226,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
               </table>
             </div>
             {v.legends.some((l) => l.bookWeights) && <p className="text-xs text-foreground/50">Weights per book summary — edit in the Benchmarks tab</p>}
+            <p className="text-xs text-foreground/50">Comparison lines are priced with European-listed funds, except All-in Berkshire: a US stock, shown for fun, not something to buy.</p>
             {v.missingSeries.length > 0 && <p className="text-xs text-amber-400">No prices for {v.missingSeries.join(', ')}; those parts count as cash.</p>}
           </div>
         </Panel>
@@ -206,6 +236,10 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
         <Panel title="Value over time">
           <div className="space-y-6 text-sm">
             {history.length ? <HistoryChart data={history} /> : <p className="text-foreground/50">Nothing yet.</p>}
+            <div className="space-y-2">
+              <p className="eyebrow">Purchases · {eur(purchases.totalEur)} bought</p>
+              {purchases.months.length ? <PurchasesChart months={purchases.months} symbols={purchases.symbols} /> : <p className="text-foreground/50">No purchases yet.</p>}
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[30rem] text-left tabular-nums">
                 <thead className="text-xs text-foreground/50"><tr><th className="py-1">Date</th><th>Symbol</th><th className="text-right">Units</th><th className="text-right">€</th><th className="pl-4">Source</th></tr></thead>

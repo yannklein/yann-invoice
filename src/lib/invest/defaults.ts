@@ -7,8 +7,8 @@ export const DEFAULT_PLAN: PlanSettings = {
   realReturnStocks: 0.05,
   realReturnBonds: 0.01,
   birthYear: null,
-  internalBefore: '2026-07-06',
-  exactFrom: '2026-07-05',
+  internalBefore: '',
+  exactFrom: '',
 };
 
 export const DEFAULT_SLOTS: Slot[] = [
@@ -42,26 +42,25 @@ export const DEFAULT_BENCHMARKS: BenchmarkLeg[] = [
 
 const seedDeposit = (date: string, amount: number, rate: number, note: string): Deposit => ({
   key: `sheet|dep|${date}|JPY|${amount}|0`, date, currency: 'JPY', amount,
-  amountEur: Math.round((amount / rate) * 100) / 100, source: 'sheet', kind: 'new', note: `${note} (ECB ${rate})`,
+  amountEur: Math.round((amount / rate) * 100) / 100, source: 'sheet', kind: 'closed', note: `${note} (ECB ${rate})`,
 });
 
-/** The only new money before the IBKR Ireland exports (dates inferred from the Stock mix sheet). */
+/**
+ * Rakuten Securities, a closed account: what went in, kept as history. Yann restarted from scratch at IBKR in March 2025,
+ * so Rakuten money is not part of today's portfolio. Its payout is a negative `closed` row once known.
+ * 2022–2024 dates are inferred (Japan tab gives the month); Jan 2025 comes from the SBI Shinsei statement.
+ */
 export const SEED_DEPOSITS: Deposit[] = [
-  seedDeposit('2022-12-01', 1_200_000, 142.48, 'Rakuten (Japan tab)'),
-  seedDeposit('2023-07-01', 1_200_000, 157.16, 'Rakuten (Japan tab)'),
-  seedDeposit('2024-01-01', 1_200_000, 156.33, 'Rakuten (Japan tab)'),
-  seedDeposit('2025-01-01', 1_000_000, 163.06, 'Rakuten (Japan tab)'),
-  seedDeposit('2025-07-01', 750_000, 168.7, 'IBKR Japan, date inferred'),
+  seedDeposit('2022-12-01', 1_200_000, 142.48, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2023-07-01', 1_200_000, 157.16, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2024-01-01', 1_200_000, 156.33, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2025-01-16', 500_000, 160.46, 'Rakuten Securities, from SBI Shinsei'),
+  seedDeposit('2025-01-19', 500_000, 160.23, 'Rakuten Securities, from SBI Shinsei'),
 ];
 
-export const SEED_SNAPSHOTS: Snapshot[] = [
-  { date: '2022-12-01', valueEur: 8422.23, note: '¥1,200,000 first Rakuten buy' },
-  { date: '2023-07-01', valueEur: 15888.33, note: '¥2,497,010 (Japan tab, after Jul 2023 buy)' },
-  { date: '2024-01-01', valueEur: 23228.73, note: '¥3,631,348 incl. UBS (Japan tab)' },
-  { date: '2025-01-01', valueEur: 33592.74, note: '¥5,477,632 incl. UBS (Japan tab)' },
-];
+export const SEED_SNAPSHOTS: Snapshot[] = [];
 
-export const SEED_CASH: CashRow[] = [{ date: '2026-07-05', deposit: 0, balance: 4559.7, note: 'Livret Bleu, Rakuten money (internal)' }];
+export const SEED_CASH: CashRow[] = [{ date: '2026-07-05', deposit: 4559.7, balance: 4559.7, note: 'Livret Bleu opening' }];
 
 /** Data rows a freshly created tab starts with. */
 export function defaultRowsFor(tab: AppTab): Cell[][] {
@@ -75,4 +74,58 @@ export function defaultRowsFor(tab: AppTab): Cell[][] {
     case 'Benchmarks': return DEFAULT_BENCHMARKS.map(toRow.benchmarks);
     default: return [];
   }
+}
+
+/** Seed rows of earlier versions: replaced by the bank and IBKR Japan statements. */
+const RETIRED_DEPOSIT_KEYS = [
+  'sheet|dep|2025-01-01|JPY|1000000|0', 'sheet|dep|2025-07-01|JPY|750000|0',
+  'sheet|dep|2025-03-05|JPY|500000|0', 'sheet|dep|2025-04-08|JPY|500000|0', 'sheet|dep|2025-05-20|JPY|100000|0', 'sheet|dep|2025-05-27|JPY|360000|0',
+];
+const RETIRED_SNAPSHOTS: [string, number][] = [
+  ['2022-12-01', 8422.23], ['2023-07-01', 15888.33], ['2024-01-01', 23228.73], ['2025-01-01', 33592.74], ['2025-01-20', 33946.65],
+];
+const RETIRED_PLAN: [string, string][] = [['internalBefore', '2026-07-06'], ['exactFrom', '2026-07-05']];
+
+const cell = (x: unknown) => String(x ?? '').trim();
+const byDate = (at: number) => (a: unknown[], b: unknown[]) => cell(a[at]).localeCompare(cell(b[at]));
+const same = (a: unknown[][], b: unknown[][]) => JSON.stringify(a) === JSON.stringify(b);
+
+export interface SeedTabs {
+  deposits: unknown[][];
+  snapshots: unknown[][];
+  cash: unknown[][];
+  plan: unknown[][];
+}
+
+/**
+ * Bring an already-linked sheet to the current model, keeping every row the app did not seed:
+ * - Rakuten deposits become `closed` history; the retired inferred rows go (the statements replaced them);
+ * - IBKR deposits are money put in (`internal` → `new`), since the portfolio restarted from scratch at IBKR;
+ * - the Livret Bleu opening balance is money put in; the Rakuten-era snapshots and plan dates go.
+ * Idempotent.
+ */
+export function migrateSeeds(t: SeedTabs): SeedTabs & { changed: boolean } {
+  const seedKeys = new Map(SEED_DEPOSITS.map((d) => [d.key, d]));
+  const kept = t.deposits.filter((r) => !RETIRED_DEPOSIT_KEYS.includes(cell(r[0])));
+  const deposits = kept.map((r) => {
+    if (seedKeys.has(cell(r[0])) && cell(r[6]) !== 'closed') return [...r.slice(0, 6), 'closed', ...r.slice(7)];
+    if (cell(r[5]) === 'ibkr' && cell(r[6]) === 'internal') return [...r.slice(0, 6), 'new', ...r.slice(7)];
+    return r;
+  });
+  const present = new Set(deposits.map((r) => cell(r[0])));
+  const missing = SEED_DEPOSITS.filter((d) => !present.has(d.key));
+  if (missing.length) deposits.push(...missing.map(toRow.deposits));
+  if (missing.length || deposits.length !== t.deposits.length) deposits.sort(byDate(1));
+
+  const snapshots = t.snapshots.filter((r) => !RETIRED_SNAPSHOTS.some(([d, v]) => cell(r[0]) === d && Number(r[1]) === v));
+
+  const first = [...t.cash].sort(byDate(0))[0];
+  const cash = t.cash.map((r) =>
+    r === first && !Number(r[1]) && cell(r[3]).includes('internal') ? [r[0], Number(r[2]), r[2], 'Livret Bleu opening'] : r,
+  );
+
+  const plan = t.plan.map((r) => (RETIRED_PLAN.some(([k, v]) => cell(r[0]) === k && cell(r[1]) === v) ? [r[0], ''] : r));
+
+  const changed = !same(deposits, t.deposits) || !same(snapshots, t.snapshots) || !same(cash, t.cash) || !same(plan, t.plan);
+  return { deposits, snapshots, cash, plan, changed };
 }
