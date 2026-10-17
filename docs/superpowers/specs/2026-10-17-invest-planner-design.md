@@ -22,23 +22,24 @@ Yann invests a few times a year in an IBKR account (EUR) and follows Andrew Hall
   - IWRD on 2026-07-06, a **fractional** 57.4462 units, €5,198.99 + €3 commission
 - **Livret Bleu:** €4,559.70, counted as bonds since the 2026/7/5 round.
 - **SRI:** none held yet; Yann wants to move toward it.
-### How the money got here (confirmed with Yann; bank statements for 2025 from SBI Shinsei and Yucho)
+### How the money got here (confirmed with Yann; IBKR Japan statement 2025-03-05 → 2026-03-05)
 
-1. **Rakuten Securities, Dec 2022 – 2025** (sheet tab `Japan`): Japanese-listed funds. New money:
-   - 2022/12 ¥1.2M, 2023/07 ¥1.2M and 2024/01 ¥1.2M (dates inferred to the 1st of the month)
-   - **2025-01-16 ¥500,000 and 2025-01-19 ¥500,000**, transferred from SBI Shinsei to Rakuten Securities
+**Model: Yann closed Rakuten Securities and restarted from scratch at IBKR.** Rakuten is history, not part of today's money.
 
-   Values after each buy: 2023/07 ¥2,497,010, 2024/01 ¥3,256,348 and 2025/01 ¥5,102,632, plus the ~¥375,000 UBS position (the sheet's "With UBS").
-2. **IBKR Japan (U18192452), 2025**: non-Japanese ETFs. New money, sent to IB証券 顧客受託:
-   - from SBI Shinsei: **2025-03-05 ¥500,000, 2025-04-08 ¥500,000, 2025-05-20 ¥100,000**
-   - from Yucho: **2025-05-27 ¥360,000**
+1. **Rakuten Securities, Dec 2022 – 2025 (closed).** ¥4.6M went in: 2022/12, 2023/07 and 2024/01 at ¥1.2M each (dates inferred), then 2025-01-16 and 2025-01-19 at ¥500k each (SBI Shinsei statement). These are kept as `closed` rows. The payout isn't recorded yet; a negative `closed` row would give Rakuten's result.
+2. **IBKR Japan (U18192452), Mar 2025 – Jan 2026.**
+   - Deposits: ¥500k (03-06), ¥500k (04-08), ¥100k (05-20), ¥360k (05-27), ¥2,000k (06-10), then ¥16,620 withdrawn (2026-01-21). Net ¥3,443,380.
+   - Buys: IWRD 52.9514 @ €64.81 (2025-04-08), IMEU 39.3901 @ €31.48 (04-10), IWRD 145.7393 @ €78.02 and IMEU 119 @ €34.54 (09-29). Total €20,167.85.
+   - About ¥2.7M waited as yen cash from June to 29 Sep 2025.
+   - The positions moved to IBKR Ireland on 2026-01-27 at that cost.
+3. **IBKR Ireland (U23805426), 2026.** €12,700 deposited. Buys: CSBGE3 on 02-04 and IWRD on 07-06.
+4. **Livret Bleu.** €4,559.70 put in, first recorded on 2026-07-05.
 
-   The Rakuten holdings were then sold, and about ¥2.0M of the proceeds went to IBKR Japan. The cost IBKR carries for the transferred shares (€20,167.85 ≈ ¥3.45M) equals the ¥1.46M of new money plus that ≈¥2.0M.
-3. **IBKR Ireland, 2026**: the positions were transferred on 2026-01-27 **at their original cost** (IMEU €5,357.17, IWRD €14,810.68; worth €22,133.14 that day). The rest of the Rakuten money (≈¥3M) arrived as the 2026 EUR deposits (€12,700) and the Livret Bleu (€4,559.70).
+**Money put in** = every deposit into IBKR (Japan, Ireland) and the Livret Bleu, net of money taken out.
 
-**New money = the five Rakuten deposits plus the four IBKR Japan deposits = ¥6.06M ≈ €39,019.90** at the ECB rates of their dates. Every other movement is internal.
+**Each statement's closing cash is authoritative.** The gap to what the rows add up to is booked as a `fx` row ("currency moves and fees"). For IBKR Japan that row is −€996.57: the yen weakened while cash waited, and there were broker fees.
 
-Not investments: transfers to Revolut, Kyash (GMO Aozora), PayPay/Wise and the ¥1 account-verification transfers.
+Withholding tax is imported as negative dividends.
 
 ## Goals
 
