@@ -25,6 +25,7 @@ import { RevenueChart } from './charts/RevenueChart';
 import { TransferChart } from './charts/TransferChart';
 import { Breakdown, sinceLabel } from '../invest/Breakdown';
 import { PurchasesChart } from '../invest/charts/PurchasesChart';
+import { FundRef } from '../invest/FundRef';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -43,7 +44,7 @@ async function loadStocks(g: Google, today: string) {
   const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
   const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
   const summary = stockSummary(p, quotes);
-  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today), closed: closedHistory(p), purchases: purchasesByMonth(p.trades, today) };
+  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today), closed: closedHistory(p), purchases: purchasesByMonth(p.trades, today), symbols: p.symbols };
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
@@ -190,7 +191,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {stocks.lines.map((l) => (
                         <tr key={l.symbol} className="border-t border-foreground/10">
                           <td className="py-1.5 text-left">
-                            {l.symbol}{l.stale && <span className="text-foreground/40"> · stale price</span>}
+                            <FundRef symbol={l.symbol} info={stocks.symbols.find((x) => x.symbol === l.symbol)} />{l.stale && <span className="text-foreground/40"> · stale price</span>}
                             <div className="text-xs text-foreground/40">{l.name}</div>
                           </td>
                           <td>{money(l.valueEur, 'EUR')}</td>

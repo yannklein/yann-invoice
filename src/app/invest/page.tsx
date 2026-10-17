@@ -14,6 +14,8 @@ import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
 import { Breakdown, sinceLabel } from './Breakdown';
+import { FundRef } from './FundRef';
+import { domicileOf } from '@/lib/invest/domicile';
 import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
 import { PurchasesChart } from './charts/PurchasesChart';
 import { purchasesByMonth } from '@/lib/invest/purchases';
@@ -78,6 +80,9 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
   const purchases = purchasesByMonth(p.trades, today);
   const heldSymbols = new Set(Object.keys(holdings(p.trades)));
   const priceDate = v.quotes.filter((q) => heldSymbols.has(q.symbol)).map((q) => q.date).sort()[0] ?? null;
+  const info = new Map(p.symbols.map((s) => [s.symbol, s]));
+  const ownFunds = [...new Set([...heldSymbols, ...p.slots.map((s) => s.buySymbol)])];
+  const notEu = ownFunds.filter((s) => !domicileOf(info.get(s)?.isin ?? '').eu);
 
   return (
     <div className="space-y-10">
@@ -144,7 +149,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
                     <tr key={l.slot} className="border-t border-foreground/10">
                       <td className="py-2 font-semibold">{l.slot}</td>
                       <td>{l.nowPct}% → {l.targetPct}%</td>
-                      <td>{l.slot === 'Bonds' && l.buyEur > 0 ? `${l.symbol} or Livret Bleu` : l.symbol}</td>
+                      <td className="py-1"><FundRef symbol={l.symbol} info={info.get(l.symbol)} label={l.slot === 'Bonds' && l.buyEur > 0 ? `${l.symbol} or Livret Bleu` : undefined} /></td>
                       <td className={`text-right font-black ${l.buyEur === 0 ? 'text-foreground/30' : ''}`}>{eur(l.buyEur)}</td>
                       <td className="text-right">{l.units === null ? '—' : l.units.toFixed(4)}{l.stale && l.units !== null ? ' *' : ''}</td>
                     </tr>
@@ -153,6 +158,11 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
               </table>
             </div>
             {v.round.driftNote && <p className="text-foreground/60">Your mix has drifted more than 10 points from target. Still fine: this round&apos;s buy already steers it back, no selling needed.</p>}
+            <p className={`text-xs ${notEu.length ? 'text-amber-400' : 'text-foreground/50'}`}>
+              {notEu.length
+                ? `Not European-domiciled: ${notEu.join(', ')}. US-domiciled funds can owe US estate tax for non-US investors; prefer an Irish (IE…) UCITS version.`
+                : 'All your funds are European-domiciled UCITS ETFs (ISIN starting IE), so no US estate-tax exposure. Search the ISIN at your broker; the link opens the fund on justETF.'}
+            </p>
             <UploadCard />
           </div>
         </Panel>
@@ -169,7 +179,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
                   {s.candidate ? (
                     <p className="text-foreground/60">
                       {s.usingSri ? 'New money already goes to ' : `${s.current?.symbol ?? '?'} (${s.current?.terPct ?? '?'}%/yr) → `}
-                      {s.candidate.name} ({s.candidate.terPct ?? '?'}%/yr)
+                      <FundRef symbol={s.candidate.symbol} info={s.candidate} label={`${s.candidate.name} (${s.candidate.terPct ?? '?'}%/yr)`} />
                       {!s.usingSri && s.current?.terPct != null && s.candidate.terPct != null && s.candidate.terPct < s.current.terPct && <b> · cheaper too</b>}
                     </p>
                   ) : (
@@ -216,6 +226,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
               </table>
             </div>
             {v.legends.some((l) => l.bookWeights) && <p className="text-xs text-foreground/50">Weights per book summary — edit in the Benchmarks tab</p>}
+            <p className="text-xs text-foreground/50">Comparison lines are priced with European-listed funds, except All-in Berkshire: a US stock, shown for fun, not something to buy.</p>
             {v.missingSeries.length > 0 && <p className="text-xs text-amber-400">No prices for {v.missingSeries.join(', ')}; those parts count as cash.</p>}
           </div>
         </Panel>
