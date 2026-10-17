@@ -122,7 +122,8 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
   const endingEur = stmt.baseCurrency && stmt.endingCashBase !== null && stmt.period
     ? eur(stmt.endingCashBase, stmt.baseCurrency, stmt.period.to)
     : stmt.endingCashEur;
-  const cashDiffEur = endingEur === null ? null : round2(ibkrCashEur(merged, undefined, acc) - endingEur);
+  // Cash as of the statement's last day: rows from a later statement imported earlier must not count.
+  const cashDiffEur = endingEur === null ? null : round2(ibkrCashEur(merged, stmt.period?.to, acc) - endingEur);
   const fxKey = stmt.period ? `${acc}|fx|${stmt.period.to}` : null;
   if (fxKey && cashDiffEur && !existing.deposits.some((d) => d.key === fxKey)) {
     add.deposits.push({
