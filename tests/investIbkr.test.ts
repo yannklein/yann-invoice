@@ -37,6 +37,7 @@ describe('parseIbkrCsv on the 2026 YTD statement', () => {
   });
   it('reads ending positions, cash and instruments', () => {
     expect(s.endingPositions).toEqual({ CSBGE3: 66, IMEU: 158.3901, IWRD: 256.1369 });
+    expect(s.endingCostBasis).toEqual({ CSBGE3: 7675.01559, IMEU: 5357.168398, IWRD: 20012.672334 });
     expect(s.endingCashEur).toBeCloseTo(91.2073, 4);
     expect(s.instruments.CSBGE3).toMatchObject({ isin: 'IE00B3VTMJ91', exchange: 'EBS' });
     expect(s.skipped).toEqual([]);

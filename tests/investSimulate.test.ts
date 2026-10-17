@@ -49,7 +49,7 @@ describe('flowsOf', () => {
     const imported = buildImport(stmt, { trades: [], deposits: [], dividends: [], symbols: DEFAULT_SYMBOLS, plan: DEFAULT_PLAN }, {});
     const f = flowsOf({ deposits: [...SEED_DEPOSITS, ...imported.deposits], cash: SEED_CASH });
     expect(f.map((x) => x.date)).toEqual(SEED_DEPOSITS.map((d) => d.date));
-    expect(f.reduce((s, x) => s + x.amountEur, 0)).toBeCloseTo(34312.3, 2);
+    expect(f.reduce((s, x) => s + x.amountEur, 0)).toBeCloseTo(39019.9, 2);
   });
   it('merges same-day deposits and adds Livret Bleu deposits', () => {
     const d = (amountEur: number): Deposit => ({ ...SEED_DEPOSITS[0], key: String(amountEur), amountEur });

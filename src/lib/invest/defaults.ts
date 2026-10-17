@@ -45,20 +45,28 @@ const seedDeposit = (date: string, amount: number, rate: number, note: string): 
   amountEur: Math.round((amount / rate) * 100) / 100, source: 'sheet', kind: 'new', note: `${note} (ECB ${rate})`,
 });
 
-/** The only new money before the IBKR Ireland exports (dates inferred from the Stock mix sheet). */
+/**
+ * The only new money before the IBKR Ireland exports. Rakuten 2022–2024 dates are inferred (Japan tab gives the month);
+ * Jan 2025 and the IBKR Japan deposits come from the SBI Shinsei and Yucho bank statements.
+ * Everything else (Rakuten sale proceeds to IBKR Japan, the 2026 EUR deposits, the Livret Bleu) is the same money moving.
+ */
 export const SEED_DEPOSITS: Deposit[] = [
-  seedDeposit('2022-12-01', 1_200_000, 142.48, 'Rakuten (Japan tab)'),
-  seedDeposit('2023-07-01', 1_200_000, 157.16, 'Rakuten (Japan tab)'),
-  seedDeposit('2024-01-01', 1_200_000, 156.33, 'Rakuten (Japan tab)'),
-  seedDeposit('2025-01-01', 1_000_000, 163.06, 'Rakuten (Japan tab)'),
-  seedDeposit('2025-07-01', 750_000, 168.7, 'IBKR Japan, date inferred'),
+  seedDeposit('2022-12-01', 1_200_000, 142.48, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2023-07-01', 1_200_000, 157.16, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2024-01-01', 1_200_000, 156.33, 'Rakuten (Japan tab, date inferred)'),
+  seedDeposit('2025-01-16', 500_000, 160.46, 'Rakuten Securities, from SBI Shinsei'),
+  seedDeposit('2025-01-19', 500_000, 160.23, 'Rakuten Securities, from SBI Shinsei'),
+  seedDeposit('2025-03-05', 500_000, 160.09, 'IBKR Japan, from SBI Shinsei'),
+  seedDeposit('2025-04-08', 500_000, 160.65, 'IBKR Japan, from SBI Shinsei'),
+  seedDeposit('2025-05-20', 100_000, 162.59, 'IBKR Japan, from SBI Shinsei'),
+  seedDeposit('2025-05-27', 360_000, 163.72, 'IBKR Japan, from Yucho'),
 ];
 
 export const SEED_SNAPSHOTS: Snapshot[] = [
   { date: '2022-12-01', valueEur: 8422.23, note: '¥1,200,000 first Rakuten buy' },
   { date: '2023-07-01', valueEur: 15888.33, note: '¥2,497,010 (Japan tab, after Jul 2023 buy)' },
   { date: '2024-01-01', valueEur: 23228.73, note: '¥3,631,348 incl. UBS (Japan tab)' },
-  { date: '2025-01-01', valueEur: 33592.74, note: '¥5,477,632 incl. UBS (Japan tab)' },
+  { date: '2025-01-20', valueEur: 33946.65, note: '¥5,477,632 incl. UBS (Japan tab, after Jan 2025 buy, ECB 161.36)' },
 ];
 
 export const SEED_CASH: CashRow[] = [{ date: '2026-07-05', deposit: 0, balance: 4559.7, note: 'Livret Bleu, Rakuten money (internal)' }];
@@ -75,4 +83,30 @@ export function defaultRowsFor(tab: AppTab): Cell[][] {
     case 'Benchmarks': return DEFAULT_BENCHMARKS.map(toRow.benchmarks);
     default: return [];
   }
+}
+
+/** Seed rows from the first version that the bank statements replaced. */
+const RETIRED_DEPOSIT_KEYS = ['sheet|dep|2025-01-01|JPY|1000000|0', 'sheet|dep|2025-07-01|JPY|750000|0'];
+const RETIRED_SNAPSHOTS: [string, number][] = [['2025-01-01', 33592.74]];
+
+const cell = (x: unknown) => String(x ?? '').trim();
+const byDate = (at: number) => (a: unknown[], b: unknown[]) => cell(a[at]).localeCompare(cell(b[at]));
+
+/**
+ * Bring an already-linked sheet's seeded history up to date: drop the retired seed rows, add any current seed row that is
+ * missing (by key / date), keep every other row untouched. Idempotent.
+ */
+export function migrateSeeds(deposits: unknown[][], snapshots: unknown[][]): { deposits: unknown[][]; snapshots: unknown[][]; changed: boolean } {
+  const keptDeposits = deposits.filter((r) => !RETIRED_DEPOSIT_KEYS.includes(cell(r[0])));
+  const keys = new Set(keptDeposits.map((r) => cell(r[0])));
+  const addDeposits = SEED_DEPOSITS.filter((d) => !keys.has(d.key)).map(toRow.deposits);
+  const keptSnapshots = snapshots.filter((r) => !RETIRED_SNAPSHOTS.some(([d, v]) => cell(r[0]) === d && Number(r[1]) === v));
+  const dates = new Set(keptSnapshots.map((r) => cell(r[0])));
+  const addSnapshots = SEED_SNAPSHOTS.filter((x) => !dates.has(x.date)).map(toRow.snapshots);
+  const changed = keptDeposits.length !== deposits.length || keptSnapshots.length !== snapshots.length || addDeposits.length > 0 || addSnapshots.length > 0;
+  return {
+    deposits: [...keptDeposits, ...addDeposits].sort(byDate(1)),
+    snapshots: [...keptSnapshots, ...addSnapshots].sort(byDate(0)),
+    changed,
+  };
 }

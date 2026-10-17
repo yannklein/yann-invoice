@@ -84,9 +84,9 @@ describe('buildView: legends', () => {
     expect(v.legends.map((l) => l.name)).toEqual(['Hallam EU', 'Hallam SRI', 'Hallam all-in-one', 'Buffett 90/10', 'All-Weather', 'Permanent', 'All-in Berkshire']);
     const hallam = v.legends[0];
     expect(hallam.points[0].date).toBe('2022-12-01');
-    expect(hallam.valueEur).toBeCloseTo(34312.3, 1); // flat prices: worth exactly what went in
-    expect(v.investedEur).toBeCloseTo(34312.3, 1);
-    expect(v.legends.at(-1)!.valueEur).toBeCloseTo(34312.3, 1); // USD converted at a flat rate
+    expect(hallam.valueEur).toBeCloseTo(39019.9, 1); // flat prices: worth exactly what went in
+    expect(v.investedEur).toBeCloseTo(39019.9, 1);
+    expect(v.legends.at(-1)!.valueEur).toBeCloseTo(39019.9, 1); // USD converted at a flat rate
   });
 });
 

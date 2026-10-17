@@ -16,7 +16,7 @@ export async function PortfolioLinkCard({ g, inputError }: { g: Google; inputErr
         {portfolioId ? (
           <p>
             Using <a className="underline" href={sheetUrl(portfolioId)} target="_blank">this sheet ↗</a> for <a className="underline" href="/invest">Invest</a>.
-            Linking again only adds missing tabs.
+            Linking again adds missing tabs and updates the history the app seeded; your own rows stay as they are.
           </p>
         ) : (
           <p>Link &ldquo;Stock mix&rdquo;: the app adds its own tabs (Trades, Deposits, …) and never changes your existing tabs.</p>

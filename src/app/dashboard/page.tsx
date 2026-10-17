@@ -186,7 +186,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 <Empty>No funds held yet</Empty>
               )}
               <p className="mt-3 text-xs text-foreground/50">
-                Cash and the Livret Bleu are left out. Shares transferred in count at their value on the transfer day.
+                Cash and the Livret Bleu are left out. Shares moved in from IBKR Japan keep what was originally paid for them.
               </p>
             </Panel>
           </>

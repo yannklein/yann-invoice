@@ -30,7 +30,7 @@ export interface StockSummary {
 const pct = (gain: number, invested: number) => (invested > 0 ? (gain / invested) * 100 : null);
 
 /**
- * What was paid for the shares held, per symbol, at average cost: buys (and transfers in, at their value on the day)
+ * What was paid for the shares held, per symbol, at average cost: buys (and transfers in, at the cost carried over)
  * add their cost; sales take out the average cost of the shares sold. Closed positions are dropped.
  */
 export function costBasis(trades: Trade[]): Record<string, number> {

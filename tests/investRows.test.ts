@@ -67,12 +67,12 @@ describe('defaults', () => {
     for (const v of sums.values()) expect(v).toBeCloseTo(100, 6);
   });
   it('seed deposits are the new money only', () => {
-    expect(SEED_DEPOSITS.map((d) => d.amountEur)).toEqual([8422.23, 7635.53, 7676.07, 6132.71, 4445.76]);
+    expect(SEED_DEPOSITS.map((d) => d.amountEur)).toEqual([8422.23, 7635.53, 7676.07, 3116.04, 3120.51, 3123.24, 3112.36, 615.04, 2198.88]);
     expect(SEED_DEPOSITS.every((d) => d.kind === 'new' && d.source === 'sheet')).toBe(true);
-    expect(SEED_DEPOSITS.reduce((s, d) => s + d.amountEur, 0)).toBeCloseTo(34312.3, 2);
+    expect(SEED_DEPOSITS.reduce((s, d) => s + d.amountEur, 0)).toBeCloseTo(39019.9, 2);
   });
   it('seed snapshots, cash and plan', () => {
-    expect(SEED_SNAPSHOTS.map((s) => s.valueEur)).toEqual([8422.23, 15888.33, 23228.73, 33592.74]);
+    expect(SEED_SNAPSHOTS.map((s) => s.valueEur)).toEqual([8422.23, 15888.33, 23228.73, 33946.65]);
     expect(SEED_CASH[0]).toMatchObject({ date: '2026-07-05', deposit: 0, balance: 4559.7 });
     expect(DEFAULT_PLAN).toMatchObject({ internalBefore: '2026-07-06', exactFrom: '2026-07-05' });
   });
@@ -82,7 +82,7 @@ describe('defaultRowsFor only seeds missing tabs', () => {
   it('gives data rows matching each header width', () => {
     expect(defaultRowsFor('Trades')).toEqual([]);
     const deps = defaultRowsFor('Deposits');
-    expect(deps).toHaveLength(5);
+    expect(deps).toHaveLength(9);
     expect(deps.every((r) => r[HEADERS.Deposits.indexOf('source')] === 'sheet')).toBe(true);
     expect(defaultRowsFor('Slots')).toHaveLength(3);
     for (const t of APP_TABS) for (const r of defaultRowsFor(t)) expect(r).toHaveLength(HEADERS[t].length);

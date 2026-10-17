@@ -13,6 +13,8 @@ export interface ParsedStatement {
   conversions: number;
   instruments: Record<string, { isin: string; exchange: string; name: string }>;
   endingPositions: Record<string, number>;
+  /** What was paid for each open position (in its currency), as IBKR carries it, transfers from other accounts included. */
+  endingCostBasis: Record<string, number>;
   endingCashEur: number | null;
   /** Data lines of a handled section that could not be parsed. */
   skipped: string[];
@@ -60,7 +62,7 @@ const HANDLED = new Set(['Trades', 'Transfers', 'Deposits & Withdrawals', 'Divid
 export function parseIbkrCsv(text: string): ParsedStatement {
   const out: ParsedStatement = {
     account: '', period: null, trades: [], transfers: [], deposits: [], dividends: [],
-    conversions: 0, instruments: {}, endingPositions: {}, endingCashEur: null, skipped: [],
+    conversions: 0, instruments: {}, endingPositions: {}, endingCostBasis: {}, endingCashEur: null, skipped: [],
   };
   const headers = new Map<string, string[]>();
 
@@ -131,6 +133,8 @@ function parseRow(section: string, get: (name: string) => string, out: ParsedSta
       const q = number(get('Quantity'));
       if (!get('Symbol') || !Number.isFinite(q)) return false;
       out.endingPositions[get('Symbol')] = q;
+      const cost = number(get('Cost Basis'));
+      if (Number.isFinite(cost)) out.endingCostBasis[get('Symbol')] = cost;
       return true;
     }
     case 'Financial Instrument Information': {

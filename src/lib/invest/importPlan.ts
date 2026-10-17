@@ -7,6 +7,8 @@ import { round2, type Deposit, type Dividend, type Portfolio, type SymbolInfo, t
 export interface ImportResult {
   /** Rows not yet in the sheet. */
   trades: Trade[];
+  /** Rows already in the sheet whose values this statement corrects (same key), e.g. a transfer's carried cost. */
+  corrections: Trade[];
   deposits: Deposit[];
   dividends: Dividend[];
   duplicates: { trades: number; deposits: number; dividends: number };
@@ -44,12 +46,17 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
     });
   }
   for (const x of stmt.transfers) {
-    const amountEur = eur(x.marketValue, x.currency, x.date);
+    const carried = carriedCost(stmt, x);
+    const amount = carried ?? x.marketValue;
+    const amountEur = eur(amount, x.currency, x.date);
     if (amountEur === null) continue;
+    const from = x.counterparty ? `from ${x.counterparty}` : 'transfer';
+    const worth = `worth ${new Intl.NumberFormat('en-US', { style: 'currency', currency: x.currency }).format(x.marketValue)} on the day`;
     trades.push({
       key: `${acc}|xfer|${x.date}|${x.symbol}|${x.quantity}`, date: x.date, account: acc, symbol: x.symbol, isin: isin(x.symbol),
-      currency: x.currency, quantity: x.quantity, price: Math.round((x.marketValue / Math.abs(x.quantity)) * 1e6) / 1e6, commission: 0,
-      amountEur: Math.sign(x.quantity) * Math.abs(amountEur), source: 'transfer', note: x.counterparty ? `from ${x.counterparty}` : '',
+      currency: x.currency, quantity: x.quantity, price: Math.round((amount / Math.abs(x.quantity)) * 1e6) / 1e6, commission: 0,
+      amountEur: Math.sign(x.quantity) * Math.abs(round2(amountEur)), source: 'transfer',
+      note: carried === null ? `${from} · at its value on the day` : `${from} · original cost carried over · ${worth}`,
     });
   }
 
@@ -82,6 +89,11 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
     const keys = new Set(old.map((o) => o.key));
     return rows.filter((r) => !keys.has(r.key));
   };
+  const byKey = new Map(existing.trades.map((t) => [t.key, t]));
+  const corrections = trades.filter((t) => {
+    const old = byKey.get(t.key);
+    return !!old && (old.amountEur !== t.amountEur || old.price !== t.price || old.note !== t.note);
+  });
   const add = { trades: fresh(trades, existing.trades), deposits: fresh(deposits, existing.deposits), dividends: freshDividends(dividends, existing.dividends) };
 
   const merged = { trades: [...existing.trades, ...add.trades], deposits: [...existing.deposits, ...add.deposits], dividends: [...existing.dividends, ...add.dividends] };
@@ -100,6 +112,7 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
 
   return {
     ...add,
+    corrections,
     duplicates: { trades: trades.length - add.trades.length, deposits: deposits.length - add.deposits.length, dividends: dividends.length - add.dividends.length },
     newSymbols,
     positionMismatches,
@@ -128,4 +141,23 @@ function freshDividends(rows: Dividend[], old: Dividend[]): Dividend[] {
   const present = new Set(signatures(old));
   const mine = signatures(rows);
   return rows.filter((_, i) => !present.has(mine[i]));
+}
+
+/**
+ * What a transferred-in position originally cost, read off the statement: the ending cost basis minus the cost of the
+ * symbol's buys in the same statement. Only when the arithmetic is unambiguous (no sells, quantities add up); else null.
+ */
+function carriedCost(stmt: ParsedStatement, x: ParsedStatement['transfers'][number]): number | null {
+  const end = stmt.endingCostBasis[x.symbol];
+  const endQty = stmt.endingPositions[x.symbol];
+  if (x.quantity <= 0 || end === undefined || endQty === undefined) return null;
+  const own = stmt.trades.filter((t) => t.symbol === x.symbol);
+  if (own.some((t) => t.quantity < 0 || t.currency !== x.currency)) return null;
+  const otherIn = stmt.transfers.filter((t) => t.symbol === x.symbol && t !== x);
+  if (otherIn.length) return null;
+  const boughtQty = own.reduce((s, t) => s + t.quantity, 0);
+  if (Math.abs(endQty - boughtQty - x.quantity) > 1e-6) return null;
+  const boughtCost = own.reduce((s, t) => s + (-t.proceeds + t.commission), 0);
+  const cost = end - boughtCost;
+  return cost > 0 ? cost : null;
 }

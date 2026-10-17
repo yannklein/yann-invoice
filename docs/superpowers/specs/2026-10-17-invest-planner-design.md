@@ -22,19 +22,23 @@ Yann invests a few times a year in an IBKR account (EUR) and follows Andrew Hall
   - IWRD on 2026-07-06, a **fractional** 57.4462 units, €5,198.99 + €3 commission
 - **Livret Bleu:** €4,559.70, counted as bonds since the 2026/7/5 round.
 - **SRI:** none held yet; Yann wants to move toward it.
-### How the money got here (confirmed with Yann; the exact dates are inferred)
+### How the money got here (confirmed with Yann; bank statements for 2025 from SBI Shinsei and Yucho)
 
-1. **Rakuten Securities era, Dec 2022 – 2025 (sheet tab `Japan`).** Japanese-listed funds, with new money deposited on 2022/12 ¥1.2M, 2023/07 ¥1.2M, 2024/01 ¥1.2M and 2025/01 ¥1.0M (¥4.6M in total).
-   - Values after each buy: 2023/07 ¥2,497,010, 2024/01 ¥3,256,348 and 2025/01 ¥5,102,632.
-   - There was also the UBS Europe ETF position, worth about ¥375,000 (the sheet's "With UBS" view).
-2. **IBKR Japan (U18192452), 2025.**
-   - **New money:** ¥750,000 for non-Japanese ETFs, inferred as **2025-07-01**. It grew to ¥815,666 by 2025-09-29, about +8.8%, which matches the move in IWRD and EUR/JPY since early July.
-   - **Moved money:** the Rakuten holdings were then **sold**, and part of the proceeds arrived as ¥2,703,676 of cash.
-3. **IBKR Ireland, 2026.**
-   - The positions were transferred on 2026-01-27.
-   - The rest of the Rakuten money arrived as the 2026 EUR deposits (€12,700) and as the Livret Bleu (€4,559.70).
+1. **Rakuten Securities, Dec 2022 – 2025** (sheet tab `Japan`): Japanese-listed funds. New money:
+   - 2022/12 ¥1.2M, 2023/07 ¥1.2M and 2024/01 ¥1.2M (dates inferred to the 1st of the month)
+   - **2025-01-16 ¥500,000 and 2025-01-19 ¥500,000**, transferred from SBI Shinsei to Rakuten Securities
 
-**So the only new money is the four Rakuten deposits plus the ¥750k: about €34,312 at the ECB rates of their dates.** Every other movement is the same money moving around. Treating it as new would make a ~+24% gain look like a ~−18% loss.
+   Values after each buy: 2023/07 ¥2,497,010, 2024/01 ¥3,256,348 and 2025/01 ¥5,102,632, plus the ~¥375,000 UBS position (the sheet's "With UBS").
+2. **IBKR Japan (U18192452), 2025**: non-Japanese ETFs. New money, sent to IB証券 顧客受託:
+   - from SBI Shinsei: **2025-03-05 ¥500,000, 2025-04-08 ¥500,000, 2025-05-20 ¥100,000**
+   - from Yucho: **2025-05-27 ¥360,000**
+
+   The Rakuten holdings were then sold, and about ¥2.0M of the proceeds went to IBKR Japan. The cost IBKR carries for the transferred shares (€20,167.85 ≈ ¥3.45M) equals the ¥1.46M of new money plus that ≈¥2.0M.
+3. **IBKR Ireland, 2026**: the positions were transferred on 2026-01-27 **at their original cost** (IMEU €5,357.17, IWRD €14,810.68; worth €22,133.14 that day). The rest of the Rakuten money (≈¥3M) arrived as the 2026 EUR deposits (€12,700) and the Livret Bleu (€4,559.70).
+
+**New money = the five Rakuten deposits plus the four IBKR Japan deposits = ¥6.06M ≈ €39,019.90** at the ECB rates of their dates. Every other movement is internal.
+
+Not investments: transfers to Revolut, Kyash (GMO Aozora), PayPay/Wise and the ¥1 account-verification transfers.
 
 ## Goals
 
@@ -94,7 +98,7 @@ Yann invests a few times a year in an IBKR account (EUR) and follows Andrew Hall
 
 | Tab | Columns | Notes |
 |---|---|---|
-| `Trades` | key, date, account, symbol, isin, currency, quantity, price, commission, amountEur, source, note | `source` ∈ ibkr/transfer/manual. `amountEur` = signed cash cost in EUR: buys positive, sells negative, commission included. For transfers it is the market value. Frozen at import. |
+| `Trades` | key, date, account, symbol, isin, currency, quantity, price, commission, amountEur, source, note | `source` ∈ ibkr/transfer/manual. `amountEur` = signed cash cost in EUR: buys positive, sells negative, commission included. For transfers it is the original cost carried over (statement's ending cost basis minus that statement's buys), else the value on the day. Re-uploading a statement corrects rows whose values changed. |
 | `Deposits` | key, date, currency, amount, amountEur, source, kind, note | `source` ∈ ibkr/sheet; `kind` ∈ new/internal. Rows with `kind = new` are the contributions to the comparison. |
 | `Dividends` | key, date, symbol, currency, amount, amountEur | |
 | `Cash` | date, deposit, balance, note | Livret Bleu, in EUR. |
@@ -109,17 +113,23 @@ Yann invests a few times a year in an IBKR account (EUR) and follows Andrew Hall
 
   | date | JPY | rate | EUR | note |
   |---|---|---|---|---|
-  | 2022-12-01 | 1,200,000 | 142.48 | 8,422.23 | Rakuten (Japan tab) |
-  | 2023-07-01 | 1,200,000 | 157.16 | 7,635.53 | Rakuten |
-  | 2024-01-01 | 1,200,000 | 156.33 | 7,676.07 | Rakuten |
-  | 2025-01-01 | 1,000,000 | 163.06 | 6,132.71 | Rakuten |
-  | 2025-07-01 | 750,000 | 168.70 | 4,445.76 | IBKR Japan, date inferred |
+  | 2022-12-01 | 1,200,000 | 142.48 | 8,422.23 | Rakuten (date inferred) |
+  | 2023-07-01 | 1,200,000 | 157.16 | 7,635.53 | Rakuten (date inferred) |
+  | 2024-01-01 | 1,200,000 | 156.33 | 7,676.07 | Rakuten (date inferred) |
+  | 2025-01-16 | 500,000 | 160.46 | 3,116.04 | Rakuten, SBI Shinsei statement |
+  | 2025-01-19 | 500,000 | 160.23 | 3,120.51 | Rakuten, SBI Shinsei statement |
+  | 2025-03-05 | 500,000 | 160.09 | 3,123.24 | IBKR Japan, SBI Shinsei statement |
+  | 2025-04-08 | 500,000 | 160.65 | 3,112.36 | IBKR Japan, SBI Shinsei statement |
+  | 2025-05-20 | 100,000 | 162.59 | 615.04 | IBKR Japan, SBI Shinsei statement |
+  | 2025-05-27 | 360,000 | 163.72 | 2,198.88 | IBKR Japan, Yucho statement |
+
+  An already-linked sheet is brought up to date when it is linked again (`migrateSeeds`): retired seed rows are replaced; other rows stay.
 
 - `Snapshots` (whole-portfolio values, notes give the ¥ source):
   - 2022-12-01 €8,422.23
   - 2023-07-01 €15,888.33 (¥2,497,010)
   - 2024-01-01 €23,228.73 (¥3,631,348, including UBS)
-  - 2025-01-01 €33,592.74 (¥5,477,632, including UBS)
+  - 2025-01-20 €33,946.65 (¥5,477,632, including UBS, after the Jan 2025 buy)
 - `Cash`: 2026-07-05, deposit 0, balance 4,559.70, note "Rakuten money (internal)".
 
 ### Benchmarks (Yahoo symbols verified on 2026-10-17; weights per the book summary, editable)
@@ -165,7 +175,7 @@ Hallam weights source: a reader's summary of the book ([Goodreads](https://www.g
   - Each benchmark invests every flow on its date and rebalances to its weights only on flow dates. It is valued on the adjusted close in EUR. A leg with no price yet holds cash at 0%.
   - **"You" before `exactFrom`:** a linear interpolation through the Snapshots plus the exact value on `exactFrom`, marked approximate.
   - **"You" from `exactFrom` on:** units × close + IBKR cash + Livret Bleu.
-  - **Invested** = Σ flows (≈ €34,312 today).
+  - **Invested** = Σ flows (≈ €39,020 today).
   - Points are weekly from the first flow, plus today.
 - **Badges:**
   - Sloth Master: ≥180 days since the last trade.

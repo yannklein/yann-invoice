@@ -28,7 +28,7 @@ describe('buildImport on the 2026 YTD statement', () => {
   it('freezes EUR amounts with commissions', () => {
     expect(r.trades.find((t) => t.symbol === 'CSBGE3')).toMatchObject({ amountEur: 7675.02, source: 'ibkr', isin: 'IE00B3VTMJ91', quantity: 66 });
     expect(r.trades.find((t) => t.symbol === 'IWRD' && t.source === 'ibkr')!.amountEur).toBe(5201.99);
-    expect(r.trades.find((t) => t.symbol === 'IMEU')).toMatchObject({ amountEur: 5988.73, source: 'transfer', commission: 0, date: '2026-01-27' });
+    expect(r.trades.find((t) => t.symbol === 'IMEU')).toMatchObject({ amountEur: 5357.17, source: 'transfer', commission: 0, date: '2026-01-27' });
   });
   it('converts USD dividends at the day rate', () => {
     expect(r.dividends.filter((d) => d.currency === 'USD').map((d) => d.amountEur)).toEqual([22.83, 74.49, 34.67]);
@@ -91,5 +91,27 @@ describe('dividend dedupe', () => {
   it('recognises rows imported with the old key format', () => {
     const old = r.dividends.map((d) => ({ ...d, key: `U0000001|div|${d.date}|${d.symbol}|${d.currency}` }));
     expect(buildImport(stmt, { ...empty, dividends: old }, rates).dividends).toEqual([]);
+  });
+});
+
+describe('transfers keep their original cost', () => {
+  const xfer = (symbol: string) => r.trades.find((t) => t.source === 'transfer' && t.symbol === symbol)!;
+  it('carries the cost basis from the old account instead of the value on the day', () => {
+    expect(xfer('IMEU')).toMatchObject({ amountEur: 5357.17, quantity: 158.3901 });
+    expect(xfer('IMEU').price).toBeCloseTo(33.822621, 5);
+    expect(xfer('IMEU').note).toContain('€5,988.73');
+    expect(xfer('IWRD').amountEur).toBe(14810.68); // 20,012.67 total cost − the 5,201.99 July buy
+  });
+  it('falls back to the value on the day without Open Positions', () => {
+    const noPositions = csv.split('\n').filter((l) => !l.startsWith('Open Positions')).join('\n');
+    const t = buildImport(parseIbkrCsv(noPositions), empty, rates).trades.find((x) => x.source === 'transfer' && x.symbol === 'IMEU')!;
+    expect(t.amountEur).toBe(5988.73);
+  });
+  it('corrects rows imported before with the value on the day', () => {
+    const old = r.trades.map((t) => (t.source === 'transfer' ? { ...t, amountEur: t.symbol === 'IMEU' ? 5988.73 : 16144.41, note: '' } : t));
+    const again = buildImport(stmt, { ...empty, trades: old, deposits: r.deposits, dividends: r.dividends }, rates);
+    expect(again.trades).toEqual([]);
+    expect(again.corrections.map((t) => [t.symbol, t.amountEur])).toEqual([['IMEU', 5357.17], ['IWRD', 14810.68]]);
+    expect(buildImport(stmt, { ...empty, trades: r.trades, deposits: r.deposits, dividends: r.dividends }, rates).corrections).toEqual([]);
   });
 });
