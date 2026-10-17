@@ -1,4 +1,5 @@
 import { dailyRateFor, type DailyRates } from '@/lib/fx/history';
+import { moneyBreakdown, type MoneyBreakdown } from './breakdown';
 import { holdings, ibkrCashEur, livretOn, nextBuyDate, rebalance, slotValues } from './holdings';
 import type { PriceSeries } from './prices';
 import { blendedReturn, buffettHorizon, project } from './projection';
@@ -21,6 +22,8 @@ export interface InvestView {
   quips: string[];
   valueEur: number;
   investedEur: number;
+  /** Where today's money comes from; adds up to valueEur. */
+  breakdown: MoneyBreakdown;
   ibkrCashEur: number;
   livretEur: number;
   round: {
@@ -171,7 +174,7 @@ export function buildView(p: Portfolio, series: Record<string, PriceSeries | nul
 
   return {
     today, nextBuy: nextBuyDate(today, p.plan.buyMonths), lazyDays: lazyStreak(today, lastTradeDate), badges: badges(ctx), quips: quips(ctx),
-    valueEur, investedEur, ibkrCashEur: cash, livretEur: livret,
+    valueEur, investedEur, breakdown: moneyBreakdown(p, holdingsValue, today), ibkrCashEur: cash, livretEur: livret,
     round: { amountEur, fromCashEur, lines, driftNote: driftPts.some((d) => Math.abs(d) > 10) },
     unassigned, quotes, sri, sriSharePct, longGame, legends, you,
     trades: p.trades, invalidRows: p.invalidRows, missingSeries: [...missingSeries],

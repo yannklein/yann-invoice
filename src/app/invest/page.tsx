@@ -13,6 +13,7 @@ import { buildView } from '@/lib/invest/view';
 import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
+import { Breakdown } from './Breakdown';
 import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
 import { LegendsChart, type ChartRow, type ChartSeries } from './charts/LegendsChart';
 import { LongGame } from './LongGame';
@@ -70,7 +71,6 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     youApprox: pt.approx || pt === firstExact ? pt.value : null,
     invested: flows.filter((f) => f.date <= pt.date).reduce((s, f) => s + f.amountEur, 0),
   }));
-  const gain = v.valueEur - v.investedEur;
   const staleQuotes = v.quotes.filter((q) => q.stale);
 
   return (
@@ -98,11 +98,20 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Value" value={eur(v.valueEur)} sub="IBKR + Livret Bleu" />
-        <Stat label="New money in" value={eur(v.investedEur)} sub="since Dec 2022" />
-        <Stat label="Gain" value={`${gain >= 0 ? '+' : '−'}${eur(Math.abs(gain))}`} sub={v.investedEur ? `${Math.round((gain / v.investedEur) * 100)}% on new money` : undefined} warn={gain < 0} />
+        <Stat label="Today" value={eur(v.breakdown.todayEur)} sub="funds, IBKR cash, Livret Bleu" />
+        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub="new savings since Dec 2022" />
+        <Stat
+          label="Total result"
+          value={`${v.breakdown.resultEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.resultEur))}`}
+          sub={`of which stock gain ${v.breakdown.stockGainEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.stockGainEur))}`}
+          warn={v.breakdown.resultEur < 0}
+        />
         <Stat label="Cash in IBKR" value={eurCents(v.ibkrCashEur)} sub={`Livret Bleu ${eur(v.livretEur)}`} />
       </div>
+
+      <Panel title="Where today's money comes from">
+        <Breakdown b={v.breakdown} />
+      </Panel>
 
       <Section title="This round">
         <Panel title="What to buy">

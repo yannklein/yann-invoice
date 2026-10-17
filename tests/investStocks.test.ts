@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BENCHMARKS, DEFAULT_PLAN, DEFAULT_SLOTS, DEFAULT_SYMBOLS } from '@/lib/invest/defaults';
-import { costBasis, stockSummary } from '@/lib/invest/stocks';
+import { costBasis, realizedGain, stockSummary } from '@/lib/invest/stocks';
 import type { Dividend, Portfolio, Trade } from '@/lib/invest/types';
 import type { Quote } from '@/lib/invest/view';
 
@@ -81,4 +81,12 @@ describe('stockSummary', () => {
       valueEur: 0, investedEur: 0, gainEur: 0, gainPct: null, dividendsEur: 0, priceDate: null, stale: false, lines: [],
     });
   });
+});
+
+describe('realizedGain', () => {
+  it('is what sold shares fetched minus their average cost', () => {
+    const trades = [trade('IWRD', '2026-01-01', 10, 900), trade('IWRD', '2026-02-01', 10, 1100), trade('IWRD', '2026-03-01', -5, -700)];
+    expect(realizedGain(trades)).toBe(200);
+  });
+  it('is 0 without sales', () => expect(realizedGain(portfolio().trades)).toBe(0));
 });

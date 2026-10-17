@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SLOTS } from '@/lib/invest/defaults';
-import { holdings, ibkrCashEur, livretOn, nextBuyDate, rebalance, slotValues, type SlotValue } from '@/lib/invest/holdings';
+import { holdings, ibkrCashEur, livretMoves, livretOn, nextBuyDate, rebalance, slotValues, type SlotValue } from '@/lib/invest/holdings';
 import type { Deposit, Dividend, Trade } from '@/lib/invest/types';
 
 const t = (date: string, symbol: string, quantity: number, amountEur: number, source: Trade['source'] = 'ibkr'): Trade => ({
@@ -74,4 +74,25 @@ describe('nextBuyDate', () => {
   it('counts today when it is the day', () => expect(nextBuyDate('2026-07-01', [1, 7])).toEqual({ date: '2026-07-01', days: 0 }));
   it('wraps to next year', () => expect(nextBuyDate('2026-07-02', [7])!.date).toBe('2027-07-01'));
   it('returns null without buy months', () => expect(nextBuyDate('2026-07-02', [])).toBeNull());
+});
+
+describe('livretMoves', () => {
+  const row = (date: string, deposit: number, balance: number) => ({ date, deposit, balance, note: '' });
+  it('reads a lower balance as money taken out, never as a loss', () => {
+    const m = livretMoves([row('2026-07-05', 0, 4559.7), row('2026-10-17', 0, 3859.7)]);
+    expect(m.openingEur).toBe(4559.7);
+    expect(m.flows).toEqual([{ date: '2026-10-17', amountEur: -700 }]);
+    expect(m.interestEur).toBe(0);
+  });
+  it('reads growth without a deposit as interest and keeps deposits as flows', () => {
+    const m = livretMoves([row('2026-07-05', 0, 4559.7), row('2026-12-31', 0, 4600), row('2027-01-02', 500, 5100)]);
+    expect(m.flows).toEqual([{ date: '2027-01-02', amountEur: 500 }]);
+    expect(m.interestEur).toBe(40.3);
+  });
+  it('counts a deposit on the opening row as new money, the rest as moved in', () => {
+    const m = livretMoves([row('2026-07-05', 1000, 4559.7)]);
+    expect(m.openingEur).toBe(3559.7);
+    expect(m.flows).toEqual([{ date: '2026-07-05', amountEur: 1000 }]);
+  });
+  it('is empty without rows', () => expect(livretMoves([])).toEqual({ openingEur: 0, flows: [], interestEur: 0 }));
 });

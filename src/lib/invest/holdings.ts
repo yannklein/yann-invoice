@@ -25,6 +25,26 @@ export function livretOn(cash: CashRow[], date: string): number {
   return cash.filter((c) => c.date <= date).sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.balance ?? 0;
 }
 
+/**
+ * The Livret Bleu as money movements. It cannot lose value, so a balance drop beyond the deposit is money taken out;
+ * growth without a deposit is interest. The first row's balance (minus its deposit) is money moved in from elsewhere.
+ */
+export function livretMoves(cash: CashRow[]): { openingEur: number; flows: { date: string; amountEur: number }[]; interestEur: number } {
+  const rows = [...cash].sort((a, b) => a.date.localeCompare(b.date));
+  if (!rows.length) return { openingEur: 0, flows: [], interestEur: 0 };
+  const flows: { date: string; amountEur: number }[] = [];
+  if (rows[0].deposit) flows.push({ date: rows[0].date, amountEur: rows[0].deposit });
+  let interest = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const change = round2(r.balance - rows[i - 1].balance - r.deposit);
+    const net = round2(r.deposit + Math.min(0, change));
+    if (net) flows.push({ date: r.date, amountEur: net });
+    if (change > 0) interest += change;
+  }
+  return { openingEur: round2(rows[0].balance - rows[0].deposit), flows, interestEur: round2(interest) };
+}
+
 export interface SlotValue {
   slot: string;
   kind: 'stocks' | 'bonds';

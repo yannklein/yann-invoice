@@ -45,6 +45,25 @@ export function costBasis(trades: Trade[]): Record<string, number> {
   return Object.fromEntries(Object.entries(pos).filter(([, p]) => Math.abs(p.q) >= 1e-9).map(([s, p]) => [s, round2(p.cost)]));
 }
 
+/** What sold shares fetched minus their average cost when sold (same averaging as costBasis). */
+export function realizedGain(trades: Trade[]): number {
+  const pos: Record<string, { q: number; cost: number }> = {};
+  let gain = 0;
+  for (const t of [...trades].sort((a, b) => a.date.localeCompare(b.date))) {
+    const p = (pos[t.symbol] ??= { q: 0, cost: 0 });
+    if (t.quantity > 0) p.cost += t.amountEur;
+    else if (p.q > 0) {
+      const sold = Math.min(p.q, -t.quantity);
+      const removed = (p.cost / p.q) * sold;
+      gain += -t.amountEur * (sold / -t.quantity) - removed;
+      p.cost -= removed;
+    }
+    p.q += t.quantity;
+    if (Math.abs(p.q) < 1e-9) p.cost = 0;
+  }
+  return round2(gain);
+}
+
 /** A fund without a quote is valued at what was paid for it and marked stale. */
 export function stockSummary(p: Pick<Portfolio, 'trades' | 'dividends' | 'symbols'>, quotes: Quote[]): StockSummary {
   const held = holdings(p.trades);

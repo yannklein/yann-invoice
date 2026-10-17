@@ -100,3 +100,14 @@ describe('empty portfolio view', () => {
     expect(allFinite(v)).toBe(true);
   });
 });
+
+describe('buildView: breakdown', () => {
+  it('uses the same totals as the page stats', () => {
+    const cash = { key: 'd', date: '2026-02-01', currency: 'EUR' as const, amount: 91, amountEur: 91, source: 'ibkr' as const, kind: 'internal' as const, note: '' };
+    const v = buildView(portfolio({ deposits: [cash, ...SEED_DEPOSITS] }), prices, {}, TODAY, null);
+    expect(v.breakdown.todayEur).toBe(v.valueEur);
+    expect(v.breakdown.newMoneyEur).toBe(v.investedEur);
+    const b = v.breakdown;
+    expect(b.newMoneyEur + b.stockGainEur + b.dividendsEur + b.interestEur + b.earlierEur + b.otherEur).toBeCloseTo(b.todayEur, 2);
+  });
+});

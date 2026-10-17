@@ -51,6 +51,10 @@ describe('flowsOf', () => {
     expect(f.map((x) => x.date)).toEqual(SEED_DEPOSITS.map((d) => d.date));
     expect(f.reduce((s, x) => s + x.amountEur, 0)).toBeCloseTo(39019.9, 2);
   });
+  it('counts money taken out of the Livret Bleu as a negative flow', () => {
+    const f = flowsOf({ deposits: [], cash: [{ date: '2026-07-05', deposit: 0, balance: 4559.7, note: '' }, { date: '2026-10-17', deposit: 0, balance: 3859.7, note: '' }] });
+    expect(f).toEqual([{ date: '2026-10-17', amountEur: -700 }]);
+  });
   it('merges same-day deposits and adds Livret Bleu deposits', () => {
     const d = (amountEur: number): Deposit => ({ ...SEED_DEPOSITS[0], key: String(amountEur), amountEur });
     const f = flowsOf({ deposits: [d(10), d(20)], cash: [{ date: '2023-01-01', deposit: 50, balance: 50, note: '' }] });

@@ -12,6 +12,7 @@ import { requireIds } from '@/lib/google/drive';
 import { syncIndex } from '@/lib/index/store';
 import { holdings } from '@/lib/invest/holdings';
 import { fetchSeries } from '@/lib/invest/prices';
+import { moneyBreakdown } from '@/lib/invest/breakdown';
 import { stockSummary } from '@/lib/invest/stocks';
 import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
 import { quotesFor } from '@/lib/invest/view';
@@ -21,6 +22,7 @@ import { ExpenseChart } from './charts/ExpenseChart';
 import { IncomeCurrencyChart } from './charts/IncomeCurrencyChart';
 import { RevenueChart } from './charts/RevenueChart';
 import { TransferChart } from './charts/TransferChart';
+import { Breakdown } from '../invest/Breakdown';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -38,7 +40,8 @@ async function loadStocks(g: Google, today: string) {
   const symbols = [...new Set(Object.keys(holdings(p.trades)).map((s) => yahoo.get(s) ?? '').filter(Boolean))];
   const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
   const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
-  return stockSummary(p, quotes);
+  const summary = stockSummary(p, quotes);
+  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today) };
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
@@ -137,20 +140,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               <Stat
-                label="Total now"
-                value={money(stocks.valueEur, 'EUR')}
-                sub={`${plural(stocks.lines.length, 'fund')}${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
+                label="Today"
+                value={money(stocks.breakdown.todayEur, 'EUR')}
+                sub={`funds, IBKR cash, Livret Bleu${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
               />
-              <Stat label="Invested" value={money(stocks.investedEur, 'EUR')} sub="paid for the shares you hold" />
+              <Stat label="Put in" value={money(stocks.breakdown.newMoneyEur, 'EUR')} sub="new savings since Dec 2022" />
               <Stat
-                label="Gain"
-                value={signedMoney(stocks.gainEur)}
-                good={stocks.gainEur > 0}
-                warn={stocks.gainEur < 0}
-                sub={stocks.gainPct == null ? undefined : signedPct(stocks.gainPct)}
+                label="Stock gain"
+                value={signedMoney(stocks.breakdown.stockGainEur)}
+                good={stocks.breakdown.stockGainEur > 0}
+                warn={stocks.breakdown.stockGainEur < 0}
+                sub={stocks.breakdown.stockGainPct == null ? 'on the funds you hold' : `${signedPct(stocks.breakdown.stockGainPct)} on what the funds cost`}
               />
-              <Stat label="Dividends" value={money(stocks.dividendsEur, 'EUR')} sub="received as cash, not in gain" />
+              <Stat
+                label="Total result"
+                value={signedMoney(stocks.breakdown.resultEur)}
+                good={stocks.breakdown.resultEur > 0}
+                warn={stocks.breakdown.resultEur < 0}
+                sub={stocks.breakdown.newMoneyEur > 0 ? `${signedPct((stocks.breakdown.resultEur / stocks.breakdown.newMoneyEur) * 100)} on money put in` : undefined}
+              />
             </div>
+            <Panel title="Where today's money comes from">
+              <Breakdown b={stocks.breakdown} />
+            </Panel>
             <Panel title="By fund">
               {stocks.lines.length ? (
                 <div className="overflow-x-auto">
@@ -186,7 +198,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 <Empty>No funds held yet</Empty>
               )}
               <p className="mt-3 text-xs text-foreground/50">
-                Cash and the Livret Bleu are left out. Shares moved in from IBKR Japan keep what was originally paid for them.
+                Funds only. Shares moved in from IBKR Japan keep what was originally paid for them.
               </p>
             </Panel>
           </>
