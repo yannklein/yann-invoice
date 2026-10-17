@@ -134,7 +134,7 @@ export function buildImport(stmt: ParsedStatement, existing: Existing, rates: Da
   return {
     ...add,
     corrections,
-    duplicates: { trades: trades.length - add.trades.length, deposits: deposits.length - add.deposits.length, dividends: dividends.length - add.dividends.length },
+    duplicates: { trades: trades.length - add.trades.length, deposits: deposits.length - add.deposits.filter((d) => d.kind !== 'fx').length, dividends: dividends.length - add.dividends.length },
     newSymbols,
     positionMismatches,
     cashDiffEur,

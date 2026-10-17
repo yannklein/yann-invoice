@@ -37,7 +37,7 @@ export function UploadCard() {
       router.refresh();
     });
 
-  const nothingNew = preview && preview.counts.trades + preview.counts.transfers + preview.counts.deposits + preview.counts.dividends + preview.counts.corrections === 0;
+  const nothingNew = preview && preview.counts.trades + preview.counts.transfers + preview.counts.deposits + preview.counts.dividends + preview.counts.corrections === 0 && preview.counts.currencyEur === 0;
   return (
     <div className="space-y-3 text-sm">
       <label className="eyebrow block">After buying: upload the IBKR Activity Statement (CSV)</label>

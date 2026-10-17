@@ -125,6 +125,9 @@ describe('IBKR Japan statement', () => {
     return out;
   };
   const jr = buildImport(jp, { ...empty, plan: { ...DEFAULT_PLAN, internalBefore: '' } }, flat('2025-03-01', '2026-03-10'));
+  it('does not count the currency row as a duplicate', () => {
+    expect(jr.duplicates).toEqual({ trades: 0, deposits: 0, dividends: 0 });
+  });
   it('converts yen deposits and withdrawals, all new money', () => {
     expect(jr.deposits.filter((d) => d.kind === 'new').map((d) => d.amountEur)).toEqual([2500, 2500, 500, 1800, 10000, 81.74, -81.74, -83.1]);
   });
