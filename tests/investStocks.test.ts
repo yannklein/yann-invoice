@@ -90,3 +90,15 @@ describe('realizedGain', () => {
   });
   it('is 0 without sales', () => expect(realizedGain(portfolio().trades)).toBe(0));
 });
+
+describe('transfers between accounts', () => {
+  it('move cost without realizing a gain', () => {
+    const trades = [
+      trade('IWRD', '2025-04-08', 10, 650),
+      trade('IWRD', '2026-01-27', -10, -700, 'transfer'), // valued at the market on the day
+      trade('IWRD', '2026-01-27', 10, 650, 'transfer'),
+    ];
+    expect(realizedGain(trades)).toBe(0);
+    expect(costBasis(trades)).toEqual({ IWRD: 650 });
+  });
+});

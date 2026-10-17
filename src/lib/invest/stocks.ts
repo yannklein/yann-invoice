@@ -45,13 +45,14 @@ export function costBasis(trades: Trade[]): Record<string, number> {
   return Object.fromEntries(Object.entries(pos).filter(([, p]) => Math.abs(p.q) >= 1e-9).map(([s, p]) => [s, round2(p.cost)]));
 }
 
-/** What sold shares fetched minus their average cost when sold (same averaging as costBasis). */
+/** What sold shares fetched minus their average cost when sold (same averaging as costBasis). Transfers never realize. */
 export function realizedGain(trades: Trade[]): number {
   const pos: Record<string, { q: number; cost: number }> = {};
   let gain = 0;
   for (const t of [...trades].sort((a, b) => a.date.localeCompare(b.date))) {
     const p = (pos[t.symbol] ??= { q: 0, cost: 0 });
     if (t.quantity > 0) p.cost += t.amountEur;
+    else if (p.q > 0 && t.source === 'transfer') p.cost -= (p.cost / p.q) * Math.min(p.q, -t.quantity);
     else if (p.q > 0) {
       const sold = Math.min(p.q, -t.quantity);
       const removed = (p.cost / p.q) * sold;

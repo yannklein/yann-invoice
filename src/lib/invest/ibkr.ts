@@ -2,6 +2,11 @@ import type { Ccy } from './types';
 
 export interface ParsedStatement {
   account: string;
+  baseCurrency: Ccy | null;
+  /** Cash Report → Ending Cash in the base currency (every currency held, valued by IBKR). */
+  endingCashBase: number | null;
+  /** Dividend withholding tax, negative amounts. */
+  withholding: { date: string; symbol: string; isin: string; currency: Ccy; amount: number }[];
   period: { from: string; to: string } | null;
   /** Stock/ETF executions. `commission` is positive. */
   trades: { dateTime: string; date: string; symbol: string; currency: Ccy; quantity: number; price: number; proceeds: number; commission: number }[];
@@ -56,12 +61,12 @@ const number = (s: string | undefined) => {
 const isCcy = (s: string | undefined): s is Ccy => s === 'EUR' || s === 'USD' || s === 'JPY';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const HANDLED = new Set(['Trades', 'Transfers', 'Deposits & Withdrawals', 'Dividends', 'Open Positions', 'Forex Balances', 'Financial Instrument Information']);
+const HANDLED = new Set(['Trades', 'Transfers', 'Deposits & Withdrawals', 'Dividends', 'Withholding Tax', 'Open Positions', 'Forex Balances', 'Financial Instrument Information']);
 
 /** IBKR Activity Statement CSV → the rows the invest planner needs. Each section's columns come from its latest Header line. */
 export function parseIbkrCsv(text: string): ParsedStatement {
   const out: ParsedStatement = {
-    account: '', period: null, trades: [], transfers: [], deposits: [], dividends: [],
+    account: '', baseCurrency: null, endingCashBase: null, withholding: [], period: null, trades: [], transfers: [], deposits: [], dividends: [],
     conversions: 0, instruments: {}, endingPositions: {}, endingCostBasis: {}, endingCashEur: null, skipped: [],
   };
   const headers = new Map<string, string[]>();
@@ -81,6 +86,12 @@ export function parseIbkrCsv(text: string): ParsedStatement {
       continue;
     }
     if (section === 'Account Information' && kind === 'Data' && fields[0] === 'Account') { out.account = fields[1] ?? ''; continue; }
+    if (section === 'Account Information' && kind === 'Data' && fields[0] === 'Base Currency') { out.baseCurrency = isCcy(fields[1]) ? fields[1] : null; continue; }
+    if (section === 'Cash Report' && kind === 'Data' && get('Currency Summary') === 'Ending Cash' && get('Currency') === 'Base Currency Summary') {
+      const v = number(get('Total'));
+      out.endingCashBase = Number.isFinite(v) ? v : null;
+      continue;
+    }
     if (section === 'Forex Balances' && kind === 'Data' && fields[0] === 'Total') { out.endingCashEur = number(get('Value in EUR')); continue; }
     if (kind !== 'Data' || !HANDLED.has(section)) continue;
 
@@ -126,6 +137,15 @@ function parseRow(section: string, get: (name: string) => string, out: ParsedSta
       const [date, amount] = [get('Date'), number(get('Amount'))];
       if (!m || !DATE.test(date) || !isCcy(currency) || !Number.isFinite(amount)) return false;
       out.dividends.push({ date, symbol: m[1], isin: m[2], currency, amount });
+      return true;
+    }
+    case 'Withholding Tax': {
+      const currency = get('Currency');
+      if (currency.startsWith('Total')) return true;
+      const m = get('Description').match(/^([A-Z0-9.]+)\(([A-Z0-9]{12})\)/);
+      const [date, amount] = [get('Date'), number(get('Amount'))];
+      if (!m || !DATE.test(date) || !isCcy(currency) || !Number.isFinite(amount)) return false;
+      out.withholding.push({ date, symbol: m[1], isin: m[2], currency, amount: -Math.abs(amount) });
       return true;
     }
     case 'Open Positions': {

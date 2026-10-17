@@ -11,12 +11,16 @@ export function holdings(trades: Trade[], until?: string): Record<string, number
   return q;
 }
 
-/** Uninvested IBKR cash in EUR: IBKR deposits − IBKR trade costs + dividends. Sheet deposits and transfers are not cash. */
-export function ibkrCashEur(p: Pick<Portfolio, 'trades' | 'deposits' | 'dividends'>, until?: string): number {
-  const on = (d: string) => !until || d <= until;
-  const deposits = p.deposits.filter((d) => d.source === 'ibkr' && on(d.date)).reduce((s, d) => s + d.amountEur, 0);
-  const spent = p.trades.filter((t) => t.source === 'ibkr' && on(t.date)).reduce((s, t) => s + t.amountEur, 0);
-  const dividends = p.dividends.filter((d) => on(d.date)).reduce((s, d) => s + d.amountEur, 0);
+/**
+ * Uninvested IBKR cash in EUR: IBKR deposits − IBKR trade costs + dividends. Sheet deposits and transfers are not cash.
+ * `account` limits it to one account (rows are keyed `account|…`).
+ */
+export function ibkrCashEur(p: Pick<Portfolio, 'trades' | 'deposits' | 'dividends'>, until?: string, account?: string): number {
+  const mine = (key: string) => !account || key.startsWith(`${account}|`);
+  const on = (d: string, key = '') => (!until || d <= until) && mine(key);
+  const deposits = p.deposits.filter((d) => d.source === 'ibkr' && on(d.date, d.key)).reduce((s, d) => s + d.amountEur, 0);
+  const spent = p.trades.filter((t) => t.source === 'ibkr' && on(t.date, t.key)).reduce((s, t) => s + t.amountEur, 0);
+  const dividends = p.dividends.filter((d) => on(d.date, d.key)).reduce((s, d) => s + d.amountEur, 0);
   return round2(deposits - spent + dividends);
 }
 

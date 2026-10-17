@@ -66,15 +66,14 @@ describe('defaults', () => {
     expect(sums.size).toBe(7);
     for (const v of sums.values()) expect(v).toBeCloseTo(100, 6);
   });
-  it('seed deposits are the new money only', () => {
-    expect(SEED_DEPOSITS.map((d) => d.amountEur)).toEqual([8422.23, 7635.53, 7676.07, 3116.04, 3120.51, 3123.24, 3112.36, 615.04, 2198.88]);
-    expect(SEED_DEPOSITS.every((d) => d.kind === 'new' && d.source === 'sheet')).toBe(true);
-    expect(SEED_DEPOSITS.reduce((s, d) => s + d.amountEur, 0)).toBeCloseTo(39019.9, 2);
+  it('seeds Rakuten as closed history', () => {
+    expect(SEED_DEPOSITS.map((d) => d.amountEur)).toEqual([8422.23, 7635.53, 7676.07, 3116.04, 3120.51]);
+    expect(SEED_DEPOSITS.every((d) => d.kind === 'closed' && d.source === 'sheet')).toBe(true);
   });
-  it('seed snapshots, cash and plan', () => {
-    expect(SEED_SNAPSHOTS.map((s) => s.valueEur)).toEqual([8422.23, 15888.33, 23228.73, 33946.65]);
-    expect(SEED_CASH[0]).toMatchObject({ date: '2026-07-05', deposit: 0, balance: 4559.7 });
-    expect(DEFAULT_PLAN).toMatchObject({ internalBefore: '2026-07-06', exactFrom: '2026-07-05' });
+  it('seeds no snapshots, the Livret Bleu opening as money put in, and no plan dates', () => {
+    expect(SEED_SNAPSHOTS).toEqual([]);
+    expect(SEED_CASH[0]).toMatchObject({ date: '2026-07-05', deposit: 4559.7, balance: 4559.7 });
+    expect(DEFAULT_PLAN).toMatchObject({ internalBefore: '', exactFrom: '' });
   });
 });
 
@@ -82,7 +81,7 @@ describe('defaultRowsFor only seeds missing tabs', () => {
   it('gives data rows matching each header width', () => {
     expect(defaultRowsFor('Trades')).toEqual([]);
     const deps = defaultRowsFor('Deposits');
-    expect(deps).toHaveLength(9);
+    expect(deps).toHaveLength(5);
     expect(deps.every((r) => r[HEADERS.Deposits.indexOf('source')] === 'sheet')).toBe(true);
     expect(defaultRowsFor('Slots')).toHaveLength(3);
     for (const t of APP_TABS) for (const r of defaultRowsFor(t)) expect(r).toHaveLength(HEADERS[t].length);
@@ -116,5 +115,18 @@ describe('plan values that do not parse are reported', () => {
     expect(planFromRows([['buyMonths', '1;7']]).buyMonths).toEqual([1, 7]);
     expect(planFromRows([['buyMonths', '3 9']]).buyMonths).toEqual([3, 9]);
     expect(invalidPlanKeys([['buyMonths', '1;7'], ['birthYear', '']])).toEqual([]);
+  });
+});
+
+describe('deposit kinds', () => {
+  it('accepts closed-account and currency rows', () => {
+    for (const kind of ['closed', 'fx'] as const) {
+      const d: Deposit = { key: 'k', date: '2025-01-16', currency: 'JPY', amount: 500000, amountEur: 3116.04, source: 'sheet', kind, note: '' };
+      expect(fromRow.deposits(toRow.deposits(d))).toEqual(d);
+    }
+  });
+  it('allows blank internalBefore and exactFrom', () => {
+    expect(invalidPlanKeys([['internalBefore', ''], ['exactFrom', '']])).toEqual([]);
+    expect(planFromRows([['internalBefore', ''], ['exactFrom', '']])).toMatchObject({ internalBefore: '', exactFrom: '' });
   });
 });

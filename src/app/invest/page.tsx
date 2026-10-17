@@ -13,7 +13,7 @@ import { buildView } from '@/lib/invest/view';
 import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
-import { Breakdown } from './Breakdown';
+import { Breakdown, sinceLabel } from './Breakdown';
 import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
 import { LegendsChart, type ChartRow, type ChartSeries } from './charts/LegendsChart';
 import { LongGame } from './LongGame';
@@ -99,7 +99,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Today" value={eur(v.breakdown.todayEur)} sub="funds, IBKR cash, Livret Bleu" />
-        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub="new savings since Dec 2022" />
+        <Stat label="Put in" value={eur(v.breakdown.newMoneyEur)} sub={sinceLabel(v.breakdown)} />
         <Stat
           label="Total result"
           value={`${v.breakdown.resultEur >= 0 ? '+' : '−'}${eur(Math.abs(v.breakdown.resultEur))}`}
@@ -110,7 +110,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       </div>
 
       <Panel title="Where today's money comes from">
-        <Breakdown b={v.breakdown} />
+        <Breakdown b={v.breakdown} closed={v.closed} />
       </Panel>
 
       <Section title="This round">

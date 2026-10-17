@@ -53,8 +53,8 @@ export const fromRow = {
     const [key, date, currency, a, e, source, kind, note] = cellsWithDate(v, 1);
     const [amount, amountEur] = [num(a), num(e)];
     if (!key || !isDate(date ?? '') || !isCcy(currency ?? '') || !fin(amount, amountEur)) return null;
-    if ((source !== 'ibkr' && source !== 'sheet') || (kind !== 'new' && kind !== 'internal')) return null;
-    return { key, date, currency: currency as Ccy, amount, amountEur, source, kind, note: note ?? '' };
+    if ((source !== 'ibkr' && source !== 'sheet') || !['new', 'internal', 'closed', 'fx'].includes(kind ?? '')) return null;
+    return { key, date, currency: currency as Ccy, amount, amountEur, source, kind: kind as Deposit['kind'], note: note ?? '' };
   },
   dividends(v: unknown[]): Dividend | null {
     const [key, date, symbol, currency, a, e] = cellsWithDate(v, 1);
@@ -114,7 +114,7 @@ export function invalidPlanKeys(rows: unknown[][]): string[] {
       k === 'buyMonths' ? monthsOf(v) !== null
       : k === 'perBuyEur' || k === 'realReturnStocks' || k === 'realReturnBonds' ? Number.isFinite(num(v))
       : k === 'birthYear' ? blank || (Number.isInteger(num(v)) && num(v) > 1900)
-      : k === 'internalBefore' || k === 'exactFrom' ? isDate(day(v))
+      : k === 'internalBefore' || k === 'exactFrom' ? blank || isDate(day(v))
       : true;
     if (!ok) bad.push(k);
   }
@@ -138,7 +138,7 @@ export function planFromRows(rows: unknown[][]): PlanSettings {
   const raw = new Map(rows.map((r) => [str(r[0]), r[1]]));
   const kv = new Map([...raw].map(([k, v]) => [k, str(v)]));
   const n = (k: string, d: number) => (Number.isFinite(num(kv.get(k))) ? num(kv.get(k)) : d);
-  const date = (k: 'internalBefore' | 'exactFrom') => (isDate(day(raw.get(k))) ? day(raw.get(k)) : DEFAULT_PLAN[k]);
+  const date = (k: 'internalBefore' | 'exactFrom') => (isDate(day(raw.get(k))) ? day(raw.get(k)) : raw.has(k) && str(raw.get(k)) === '' ? '' : DEFAULT_PLAN[k]);
   const months = monthsOf(raw.get('buyMonths'));
   const birth = num(kv.get('birthYear'));
   return {

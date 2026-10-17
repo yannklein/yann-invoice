@@ -14,14 +14,15 @@ describe('buildImport on the 2026 YTD statement', () => {
   it('turns the statement into new rows', () => {
     expect(r.trades.filter((t) => t.source === 'ibkr')).toHaveLength(2);
     expect(r.trades.filter((t) => t.source === 'transfer')).toHaveLength(2);
-    expect(r.deposits).toHaveLength(7);
+    expect(r.deposits.filter((d) => d.kind !== 'fx')).toHaveLength(7);
+    expect(r.deposits.filter((d) => d.kind === 'fx')).toHaveLength(1);
     expect(r.dividends).toHaveLength(6);
     expect(r.missingRates).toBe(false);
     expect(r.conversions).toBe(3);
     expect(r.newSymbols).toEqual([]);
   });
-  it('marks deposits before internalBefore as internal moves', () => {
-    expect(r.deposits.every((d) => d.kind === 'internal' && d.source === 'ibkr')).toBe(true);
+  it('counts deposits as money put in, unless dated before internalBefore', () => {
+    expect(r.deposits.filter((d) => d.kind !== 'fx').every((d) => d.kind === 'new' && d.source === 'ibkr')).toBe(true);
     const later = buildImport(stmt, { ...empty, plan: { ...DEFAULT_PLAN, internalBefore: '2026-06-01' } }, rates);
     expect(later.deposits.filter((d) => d.kind === 'new').map((d) => d.date)).toEqual(['2026-06-30', '2026-06-30', '2026-06-30']);
   });
@@ -113,5 +114,38 @@ describe('transfers keep their original cost', () => {
     expect(again.trades).toEqual([]);
     expect(again.corrections.map((t) => [t.symbol, t.amountEur])).toEqual([['IMEU', 5357.17], ['IWRD', 14810.68]]);
     expect(buildImport(stmt, { ...empty, trades: r.trades, deposits: r.deposits, dividends: r.dividends }, rates).corrections).toEqual([]);
+  });
+});
+
+describe('IBKR Japan statement', () => {
+  const jp = parseIbkrCsv(readFileSync('tests/fixtures/ibkr-japan.csv', 'utf8'));
+  const flat = (from: string, to: string) => {
+    const out: Record<string, { JPY: number; USD: number }> = {};
+    for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += 86_400_000) out[new Date(t).toISOString().slice(0, 10)] = { JPY: 200, USD: 1.25 };
+    return out;
+  };
+  const jr = buildImport(jp, { ...empty, plan: { ...DEFAULT_PLAN, internalBefore: '' } }, flat('2025-03-01', '2026-03-10'));
+  it('converts yen deposits and withdrawals, all new money', () => {
+    expect(jr.deposits.filter((d) => d.kind === 'new').map((d) => d.amountEur)).toEqual([2500, 2500, 500, 1800, 10000, 81.74, -81.74, -83.1]);
+  });
+  it('moves transferred-out shares at what they cost, so the transfer in nets to zero', () => {
+    const out = jr.trades.filter((t) => t.source === 'transfer');
+    expect(out.map((t) => [t.symbol, t.quantity, t.amountEur])).toEqual([['IMEU', -158.3901, -5357.17], ['IWRD', -198.6907, -14810.68]]);
+  });
+  it('keeps dividends net of withholding tax', () => {
+    expect(jr.dividends.reduce((a, d) => a + d.amountEur, 0)).toBeCloseTo(47.26 + 54.14 - 9.57 - 10.97, 2);
+  });
+  it('checks positions for this account only', () => {
+    const both = buildImport(jp, { ...empty, trades: r.trades, plan: { ...DEFAULT_PLAN, internalBefore: '' } }, flat('2025-03-01', '2026-03-10'));
+    expect(both.positionMismatches).toEqual([]);
+  });
+  it('books the gap to the statement\'s closing cash as currency moves and fees', () => {
+    const fx = jr.deposits.filter((d) => d.kind === 'fx');
+    expect(fx).toHaveLength(1);
+    expect(fx[0]).toMatchObject({ key: 'U0000002|fx|2026-03-05', date: '2026-03-05', source: 'ibkr' });
+    // formula cash: 17,216.90 deposits − 20,167.85 buys + 80.86 net dividends; the account really closed with ¥0.73 ≈ €0
+    expect(fx[0].amountEur).toBeCloseTo(2870.09, 2);
+    const again = buildImport(jp, { ...empty, trades: jr.trades, deposits: jr.deposits, dividends: jr.dividends, plan: { ...DEFAULT_PLAN, internalBefore: '' } }, flat('2025-03-01', '2026-03-10'));
+    expect(again.deposits).toEqual([]);
   });
 });

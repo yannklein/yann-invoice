@@ -18,7 +18,11 @@ export interface Trade {
   note: string;
 }
 
-/** Money into (or out of) an account. Only `kind: 'new'` is fresh savings; `internal` is money moved between pots. */
+/**
+ * Money into (or out of) an account. `new` is money put in (negative = taken out); `internal` is money moved between pots;
+ * `closed` belongs to a closed account (Rakuten) and is history only; `fx` books currency moves and fees so cash matches
+ * the statement.
+ */
 export interface Deposit {
   key: string;
   date: string;
@@ -26,7 +30,7 @@ export interface Deposit {
   amount: number;
   amountEur: number;
   source: 'ibkr' | 'sheet';
-  kind: 'new' | 'internal';
+  kind: 'new' | 'internal' | 'closed' | 'fx';
   note: string;
 }
 

@@ -41,7 +41,7 @@ export async function linkPortfolio(g: Google, id: string): Promise<{ created: A
       requestBody: { valueInputOption: 'RAW', data: created.map((t) => ({ range: `${q(t)}!A1`, values: [HEADERS[t], ...defaultRowsFor(t)] })) },
     });
   }
-  const migrated = !created.includes('Deposits') && !created.includes('Snapshots') && (await migrateSeedRows(g.sheets, id));
+  const migrated = !['Deposits', 'Snapshots', 'Cash', 'Plan'].some((t) => created.includes(t as AppTab)) && (await migrateSeedRows(g.sheets, id));
   // Only one file may carry the role, otherwise findByRole would pick one at random.
   const others = await listAll(g.drive, `appProperties has { key='${ROLE_KEY}' and value='portfolio' } and trashed=false`, 'id');
   for (const f of others) {
@@ -51,21 +51,21 @@ export async function linkPortfolio(g: Google, id: string): Promise<{ created: A
   return { created, migrated };
 }
 
-/** Rewrite the seeded history (Deposits, Snapshots) when the seeds changed; other rows stay as they are. */
+/** Bring the seeded history (Deposits, Snapshots, Cash, Plan) to the current model; other rows stay as they are. */
 async function migrateSeedRows(sheets: sheets_v4.Sheets, id: string): Promise<boolean> {
-  const res = await sheets.spreadsheets.values.batchGet({ spreadsheetId: id, ranges: [`${q('Deposits')}!A2:H`, `${q('Snapshots')}!A2:C`], valueRenderOption: 'UNFORMATTED_VALUE' });
-  const [deposits, snapshots] = (res.data.valueRanges ?? []).map((r) => (r.values ?? []) as unknown[][]);
-  const m = migrateSeeds(deposits ?? [], snapshots ?? []);
+  const tabs = ['Deposits', 'Snapshots', 'Cash', 'Plan'] as const;
+  const res = await sheets.spreadsheets.values.batchGet({ spreadsheetId: id, ranges: tabs.map((t) => `${q(t)}!A2:Z`), valueRenderOption: 'UNFORMATTED_VALUE' });
+  const [deposits, snapshots, cash, plan] = tabs.map((_, i) => (res.data.valueRanges?.[i]?.values ?? []) as unknown[][]);
+  const m = migrateSeeds({ deposits, snapshots, cash, plan });
   if (!m.changed) return false;
   const pad = (rows: unknown[][], before: number, width: number) => [...rows, ...Array.from({ length: Math.max(0, before - rows.length) }, () => Array(width).fill(''))];
+  const before = { Deposits: deposits, Snapshots: snapshots, Cash: cash, Plan: plan };
+  const after = { Deposits: m.deposits, Snapshots: m.snapshots, Cash: m.cash, Plan: m.plan };
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: id,
     requestBody: {
       valueInputOption: 'RAW',
-      data: [
-        { range: `${q('Deposits')}!A2`, values: pad(m.deposits, deposits?.length ?? 0, HEADERS.Deposits.length) },
-        { range: `${q('Snapshots')}!A2`, values: pad(m.snapshots, snapshots?.length ?? 0, HEADERS.Snapshots.length) },
-      ],
+      data: tabs.map((t) => ({ range: `${q(t)}!A2`, values: pad(after[t], before[t].length, HEADERS[t].length) })),
     },
   });
   return true;

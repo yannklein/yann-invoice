@@ -63,8 +63,10 @@ export function UploadCard() {
               Holdings differ from the statement: {preview.positionMismatches.map((m) => `${m.symbol} sheet ${m.sheet} vs statement ${m.statement}`).join('; ')}.
             </p>
           )}
-          {preview.cashDiffEur !== null && Math.abs(preview.cashDiffEur) >= 5 && (
-            <p className="text-amber-400">Cash differs from the statement by {eur(preview.cashDiffEur)}.</p>
+          {preview.counts.currencyEur !== 0 && (
+            <p className="text-foreground/70">
+              Currency moves and fees booked so cash matches the statement: {eur(preview.counts.currencyEur)}.
+            </p>
           )}
           {preview.missingRates && <p className="text-destructive">Exchange rates unavailable — nothing was imported. Try again later.</p>}
           {preview.skipped.length > 0 && (

@@ -12,7 +12,7 @@ import { requireIds } from '@/lib/google/drive';
 import { syncIndex } from '@/lib/index/store';
 import { holdings } from '@/lib/invest/holdings';
 import { fetchSeries } from '@/lib/invest/prices';
-import { moneyBreakdown } from '@/lib/invest/breakdown';
+import { closedHistory, moneyBreakdown } from '@/lib/invest/breakdown';
 import { stockSummary } from '@/lib/invest/stocks';
 import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
 import { quotesFor } from '@/lib/invest/view';
@@ -22,7 +22,7 @@ import { ExpenseChart } from './charts/ExpenseChart';
 import { IncomeCurrencyChart } from './charts/IncomeCurrencyChart';
 import { RevenueChart } from './charts/RevenueChart';
 import { TransferChart } from './charts/TransferChart';
-import { Breakdown } from '../invest/Breakdown';
+import { Breakdown, sinceLabel } from '../invest/Breakdown';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -41,7 +41,7 @@ async function loadStocks(g: Google, today: string) {
   const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
   const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
   const summary = stockSummary(p, quotes);
-  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today) };
+  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today), closed: closedHistory(p) };
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
@@ -144,7 +144,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 value={money(stocks.breakdown.todayEur, 'EUR')}
                 sub={`funds, IBKR cash, Livret Bleu${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
               />
-              <Stat label="Put in" value={money(stocks.breakdown.newMoneyEur, 'EUR')} sub="new savings since Dec 2022" />
+              <Stat label="Put in" value={money(stocks.breakdown.newMoneyEur, 'EUR')} sub={sinceLabel(stocks.breakdown)} />
               <Stat
                 label="Stock gain"
                 value={signedMoney(stocks.breakdown.stockGainEur)}
@@ -161,7 +161,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               />
             </div>
             <Panel title="Where today's money comes from">
-              <Breakdown b={stocks.breakdown} />
+              <Breakdown b={stocks.breakdown} closed={stocks.closed} />
             </Panel>
             <Panel title="By fund">
               {stocks.lines.length ? (
