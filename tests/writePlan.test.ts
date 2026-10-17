@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { locate } from '@/lib/invoice/layout';
-import { invoiceTitle, planFormats, planStructure, planValues } from '@/lib/invoice/writePlan';
+import { invoiceTitle, planFormats, planStructure, planValues, wrapNote } from '@/lib/invoice/writePlan';
 import type { InvoiceDraft } from '@/lib/invoice/types';
 import { ES_202609003 } from './fixtures/grids';
 
@@ -107,6 +107,46 @@ describe('planValues', () => {
   it('rejects more items than the template holds', () => {
     const items = Array.from({ length: 10 }, () => ({ description: 'x', quantity: 1, unitPrice: 1 }));
     expect(() => planValues(L, ES_202609003, draft({ items }))).toThrow(/items/);
+  });
+});
+
+const IRPF_NOTE = '- Se aplica retención reducida del IRPF del 7% conforme a la normativa vigente para nuevos profesionales (primeros años de actividad).';
+
+describe('wrapNote', () => {
+  it('keeps a note that fits the A:F width on one line', () => {
+    const note = '- Operación exenta de IVA conforme al artículo 20.1.9º de la Ley 37/1992 del IVA.';
+    expect(wrapNote(note)).toEqual([note]);
+  });
+
+  it('breaks a long note at spaces, indenting continuations under the dash', () => {
+    const lines = wrapNote(IRPF_NOTE);
+    expect(lines).toEqual([
+      '- Se aplica retención reducida del IRPF del 7% conforme a la normativa vigente para nuevos',
+      '  profesionales (primeros años de actividad).',
+    ]);
+    expect(lines.every((l) => l.length <= 95)).toBe(true);
+  });
+
+  it('does not indent continuations of notes without a dash', () => {
+    expect(wrapNote(`${'word '.repeat(30)}end`)[1]).toMatch(/^word/);
+  });
+
+  it('hard-splits a single word longer than a line', () => {
+    expect(wrapNote('x'.repeat(200)).map((l) => l.length)).toEqual([95, 95, 10]);
+  });
+});
+
+describe('long notes', () => {
+  it('get one sheet row per wrapped line, so nothing is clipped past column F', () => {
+    const notes = ['- Operación exenta de IVA conforme al artículo 20.1.9º de la Ley 37/1992 del IVA.', IRPF_NOTE];
+    expect(planStructure(L, ES_202609003, draft({ notes }), SHEET)).toEqual([]);
+    const { raw } = planValues(L, ES_202609003, draft({ notes }));
+    expect(raw.find((v) => v.range === 'A30:A32')?.values).toEqual([[notes[0]], ...wrapNote(IRPF_NOTE).map((l) => [l])]);
+  });
+
+  it('inserts rows when wrapped notes outgrow the template', () => {
+    const reqs = planStructure(L, ES_202609003, draft({ notes: [IRPF_NOTE, IRPF_NOTE] }), SHEET);
+    expect(reqs).toEqual([insert(32, 1)]);
   });
 });
 

@@ -42,6 +42,37 @@ const setText = (sheetId: number, rowIndex: number, columnIndex: number, text: s
   },
 });
 
+/**
+ * Notes sit in single, unmerged A cells and overflow to the right, so anything wider than A:F is clipped
+ * in the sheet and the PDF. 95 characters of Arial 10 sentence text is ~570px against A:F's ~660px.
+ */
+const NOTE_WIDTH = 95;
+
+/** Break a note at spaces into lines that fit A:F; continuations of a "- " note line up under its text. */
+export function wrapNote(note: string, width = NOTE_WIDTH): string[] {
+  const indent = note.startsWith('- ') ? '  ' : '';
+  const lines: string[] = [];
+  const head = () => (lines.length ? indent : '');
+  let line = '';
+  for (let word of note.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length <= width) {
+      line += ` ${word}`;
+      continue;
+    }
+    if (line) lines.push(line);
+    while (head().length + word.length > width) {
+      const room = width - head().length;
+      lines.push(head() + word.slice(0, room));
+      word = word.slice(room);
+    }
+    line = word && head() + word;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+const noteLines = (d: InvoiceDraft) => d.notes.flatMap((n) => wrapNote(n));
+
 const bankCapacity = (grid: Grid, L: Located) => Math.max(0, lastNonEmptyRow(grid, A) - L.bankRow);
 
 interface RowOp {
@@ -65,7 +96,8 @@ export function planStructure(layout: Layout, grid: Grid, d: InvoiceDraft, sheet
   if (d.bankLines.length > bankHave) insert(L.bankRow + 1 + bankHave, d.bankLines.length - bankHave);
 
   const notesHave = L.bankRow - L.notesRow - 1;
-  if (d.notes.length > notesHave) insert(L.bankRow, d.notes.length - notesHave);
+  const notes = noteLines(d).length;
+  if (notes > notesHave) insert(L.bankRow, notes - notesHave);
 
   if (d.withholdingRate > 0 && L.whtRateRow == null) {
     if (L.vatAmountRow !== L.vatRateRow + 1) throw new Error('Invoice template VAT rows must be adjacent');
@@ -154,7 +186,7 @@ export function planValues(layout: Layout, grid: Grid, d: InvoiceDraft): { raw: 
   raw.push({ range: `A${tr}`, values: [[hasWht ? 'TOTAL after withholding tax' : 'AMOUNT DUE']] });
   entered.push({ range: `F${tr}`, values: [[`=F${sub}+F${va}${minus.map((m) => `-${m}`).join('')}`]] });
 
-  column('A', L.notesRow + 1, pad(d.notes, L.bankRow - L.notesRow - 1));
+  column('A', L.notesRow + 1, pad(noteLines(d), L.bankRow - L.notesRow - 1));
   column('A', L.bankRow + 1, pad(d.bankLines, bankCapacity(grid, L)));
 
   return { raw, entered };

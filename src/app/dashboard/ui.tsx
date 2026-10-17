@@ -5,10 +5,13 @@ import type { ShareRow } from '@/lib/dashboard/business';
 import { money, percent } from '@/lib/dashboard/format';
 import type { DisplayCurrency } from '@/lib/dashboard/period';
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="eyebrow border-l-[2.5px] border-foreground/20 pl-3 text-foreground/50">{title}</h2>
+      <div className="flex items-baseline gap-3">
+        <h2 className="eyebrow border-l-[2.5px] border-foreground/20 pl-3 text-foreground/50">{title}</h2>
+        {aside && <span className="text-xs text-foreground/50">{aside}</span>}
+      </div>
       {children}
     </section>
   );
@@ -23,12 +26,12 @@ export function Panel({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-export function Stat({ label, value, sub, warn }: { label: string; value: string; sub?: ReactNode; warn?: boolean }) {
+export function Stat({ label, value, sub, warn, good }: { label: string; value: string; sub?: ReactNode; warn?: boolean; good?: boolean }) {
   return (
     <Card>
       <CardHeader><CardTitle>{label}</CardTitle></CardHeader>
       <CardContent className="space-y-1">
-        <p className={`text-2xl font-black tabular-nums ${warn ? 'text-destructive' : ''}`}>{value}</p>
+        <p className={`text-2xl font-black tabular-nums ${warn ? 'text-destructive' : good ? 'text-positive' : ''}`}>{value}</p>
         {sub && <p className="text-xs text-foreground/50">{sub}</p>}
       </CardContent>
     </Card>

@@ -6,10 +6,15 @@ import { dayMonth, delayLabel, money, monthShort, percent, signedPercent } from 
 import { parseCcy, parsePeriod, periodLabel, periodMonths, periodParam, taxYearOf, todayDate, yearOptions } from '@/lib/dashboard/period';
 import { instalmentsInProgress, nextFiling, taxQuarters } from '@/lib/dashboard/tax';
 import { expenseBreakdown, incomeByCurrency, monthTransfer, transfers } from '@/lib/dashboard/household';
-import { fetchMonthlyRates } from '@/lib/fx/history';
-import { getGoogle } from '@/lib/google/client';
+import { fetchDailyRates, fetchMonthlyRates } from '@/lib/fx/history';
+import { getGoogle, type Google } from '@/lib/google/client';
 import { requireIds } from '@/lib/google/drive';
 import { syncIndex } from '@/lib/index/store';
+import { holdings } from '@/lib/invest/holdings';
+import { fetchSeries } from '@/lib/invest/prices';
+import { stockSummary } from '@/lib/invest/stocks';
+import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
+import { quotesFor } from '@/lib/invest/view';
 import { currentMonth, invoiceMonth, monthLabel } from '@/lib/shared/model';
 import { findSharedId, readShared } from '@/lib/shared/store';
 import { ExpenseChart } from './charts/ExpenseChart';
@@ -19,16 +24,33 @@ import { TransferChart } from './charts/TransferChart';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const signedMoney = (x: number) => `${x >= 0 ? '+' : '−'}${money(Math.abs(x), 'EUR')}`;
+const signedPct = (x: number) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(1)}%`;
+const minusDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+
+/** The held funds at their latest price (two weeks of quotes is plenty), or null when no portfolio sheet is linked. */
+async function loadStocks(g: Google, today: string) {
+  const id = await findPortfolioId(g.drive);
+  if (!id) return null;
+  const p = await readPortfolio(g.sheets, id);
+  const from = minusDays(today, 14);
+  const yahoo = new Map(p.symbols.map((s) => [s.symbol, s.yahoo]));
+  const symbols = [...new Set(Object.keys(holdings(p.trades)).map((s) => yahoo.get(s) ?? '').filter(Boolean))];
+  const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
+  const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
+  return stockSummary(p, quotes);
+}
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
   const params = await searchParams;
   const g = await getGoogle();
-  const [{ rows, failed }, shared] = await Promise.all([
-    syncIndex(g, await requireIds(g)),
-    findSharedId(g.drive).then((id) => (id ? readShared(g.sheets, id) : null)),
-  ]);
   const now = currentMonth();
   const today = todayDate();
+  const [{ rows, failed }, shared, stocks] = await Promise.all([
+    syncIndex(g, await requireIds(g)),
+    findSharedId(g.drive).then((id) => (id ? readShared(g.sheets, id) : null)),
+    loadStocks(g, today),
+  ]);
   const oldest = rows.length ? rows.map(invoiceMonth).sort()[0] : null;
   const fx = buildFx(await fetchMonthlyRates(oldest ?? now, today), shared?.months ?? []);
 
@@ -105,6 +127,71 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           sub={!household ? 'shared account not imported' : household.thisMonth != null ? monthLabel(now) : <Link className="underline" href="/shared">not saved yet</Link>}
         />
       </div>
+
+      <Section title="Stocks · €" aside={stocks && <Link className="underline" href="/invest">Details on Invest →</Link>}>
+        {!stocks ? (
+          <p className="text-sm text-foreground/60">
+            No portfolio sheet yet. <Link className="underline" href="/settings#portfolio">Link “Stock mix” in Settings</Link>.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Stat
+                label="Total now"
+                value={money(stocks.valueEur, 'EUR')}
+                sub={`${plural(stocks.lines.length, 'fund')}${stocks.priceDate ? ` · prices of ${dayMonth(stocks.priceDate)}` : ''}${stocks.stale ? ' · some stale' : ''}`}
+              />
+              <Stat label="Invested" value={money(stocks.investedEur, 'EUR')} sub="paid for the shares you hold" />
+              <Stat
+                label="Gain"
+                value={signedMoney(stocks.gainEur)}
+                good={stocks.gainEur > 0}
+                warn={stocks.gainEur < 0}
+                sub={stocks.gainPct == null ? undefined : signedPct(stocks.gainPct)}
+              />
+              <Stat label="Dividends" value={money(stocks.dividendsEur, 'EUR')} sub="received as cash, not in gain" />
+            </div>
+            <Panel title="By fund">
+              {stocks.lines.length ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm tabular-nums">
+                    <thead className="eyebrow text-right text-foreground/50">
+                      <tr>
+                        <th className="py-1.5 text-left font-bold">Fund</th>
+                        <th className="font-bold">Value</th>
+                        <th className="font-bold">Share</th>
+                        <th className="font-bold">Invested</th>
+                        <th className="font-bold">Gain</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-right">
+                      {stocks.lines.map((l) => (
+                        <tr key={l.symbol} className="border-t border-foreground/10">
+                          <td className="py-1.5 text-left">
+                            {l.symbol}{l.stale && <span className="text-foreground/40"> · stale price</span>}
+                            <div className="text-xs text-foreground/40">{l.name}</div>
+                          </td>
+                          <td>{money(l.valueEur, 'EUR')}</td>
+                          <td>{l.sharePct.toFixed(1)}%</td>
+                          <td>{money(l.investedEur, 'EUR')}</td>
+                          <td className={`whitespace-nowrap ${l.gainEur > 0 ? 'text-positive' : l.gainEur < 0 ? 'text-destructive' : ''}`}>
+                            {signedMoney(l.gainEur)}{l.gainPct != null && ` · ${signedPct(l.gainPct)}`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty>No funds held yet</Empty>
+              )}
+              <p className="mt-3 text-xs text-foreground/50">
+                Cash and the Livret Bleu are left out. Shares transferred in count at their value on the transfer day.
+              </p>
+            </Panel>
+          </>
+        )}
+      </Section>
 
       <Section title="Business">
         <Panel title="Revenue by month">
