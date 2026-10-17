@@ -13,6 +13,7 @@ import { syncIndex } from '@/lib/index/store';
 import { holdings } from '@/lib/invest/holdings';
 import { fetchSeries } from '@/lib/invest/prices';
 import { closedHistory, moneyBreakdown } from '@/lib/invest/breakdown';
+import { purchasesByMonth } from '@/lib/invest/purchases';
 import { stockSummary } from '@/lib/invest/stocks';
 import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
 import { quotesFor } from '@/lib/invest/view';
@@ -23,6 +24,7 @@ import { IncomeCurrencyChart } from './charts/IncomeCurrencyChart';
 import { RevenueChart } from './charts/RevenueChart';
 import { TransferChart } from './charts/TransferChart';
 import { Breakdown, sinceLabel } from '../invest/Breakdown';
+import { PurchasesChart } from '../invest/charts/PurchasesChart';
 import { Empty, NotImported, Panel, Pill, Section, ShareBars, Stat } from './ui';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -41,7 +43,7 @@ async function loadStocks(g: Google, today: string) {
   const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
   const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
   const summary = stockSummary(p, quotes);
-  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today), closed: closedHistory(p) };
+  return { ...summary, breakdown: moneyBreakdown(p, summary.valueEur, today), closed: closedHistory(p), purchases: purchasesByMonth(p.trades, today) };
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
@@ -166,6 +168,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </div>
             <Panel title="Where today's money comes from">
               <Breakdown b={stocks.breakdown} closed={stocks.closed} />
+            </Panel>
+            <Panel title={`Purchases · ${money(stocks.purchases.totalEur, 'EUR')} bought`}>
+              {stocks.purchases.months.length ? <PurchasesChart months={stocks.purchases.months} symbols={stocks.purchases.symbols} /> : <Empty>No purchases yet</Empty>}
+              <p className="mt-2 text-xs text-foreground/50">What each buy cost, commission included. Moving shares from IBKR Japan to Ireland isn’t a buy.</p>
             </Panel>
             <Panel title="By fund">
               {stocks.lines.length ? (

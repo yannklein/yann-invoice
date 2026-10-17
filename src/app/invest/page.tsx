@@ -15,6 +15,8 @@ import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
 import { Breakdown, sinceLabel } from './Breakdown';
 import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
+import { PurchasesChart } from './charts/PurchasesChart';
+import { purchasesByMonth } from '@/lib/invest/purchases';
 import { LegendsChart, type ChartRow, type ChartSeries } from './charts/LegendsChart';
 import { LongGame } from './LongGame';
 import { UploadCard } from './UploadCard';
@@ -73,6 +75,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     invested: flows.filter((f) => f.date <= pt.date).reduce((s, f) => s + f.amountEur, 0),
   }));
   const staleQuotes = v.quotes.filter((q) => q.stale);
+  const purchases = purchasesByMonth(p.trades, today);
   const heldSymbols = new Set(Object.keys(holdings(p.trades)));
   const priceDate = v.quotes.filter((q) => heldSymbols.has(q.symbol)).map((q) => q.date).sort()[0] ?? null;
 
@@ -222,6 +225,10 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
         <Panel title="Value over time">
           <div className="space-y-6 text-sm">
             {history.length ? <HistoryChart data={history} /> : <p className="text-foreground/50">Nothing yet.</p>}
+            <div className="space-y-2">
+              <p className="eyebrow">Purchases · {eur(purchases.totalEur)} bought</p>
+              {purchases.months.length ? <PurchasesChart months={purchases.months} symbols={purchases.symbols} /> : <p className="text-foreground/50">No purchases yet.</p>}
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[30rem] text-left tabular-nums">
                 <thead className="text-xs text-foreground/50"><tr><th className="py-1">Date</th><th>Symbol</th><th className="text-right">Units</th><th className="text-right">€</th><th className="pl-4">Source</th></tr></thead>
