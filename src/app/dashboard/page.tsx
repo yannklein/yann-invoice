@@ -6,16 +6,11 @@ import { dayMonth, money, percent, signedPercent } from '@/lib/dashboard/format'
 import { type DisplayCurrency, parseCcy, parsePeriod, periodLabel, periodMonths, periodParam, todayDate, yearOptions } from '@/lib/dashboard/period';
 import { nextFiling } from '@/lib/dashboard/tax';
 import { monthTransfer, transfers } from '@/lib/dashboard/household';
-import { fetchDailyRates, fetchMonthlyRates } from '@/lib/fx/history';
-import { getGoogle, type Google } from '@/lib/google/client';
+import { fetchMonthlyRates } from '@/lib/fx/history';
+import { getGoogle } from '@/lib/google/client';
 import { requireIds } from '@/lib/google/drive';
 import { syncIndex } from '@/lib/index/store';
-import { holdings } from '@/lib/invest/holdings';
-import { fetchSeries } from '@/lib/invest/prices';
-import { moneyBreakdown } from '@/lib/invest/breakdown';
-import { stockSummary } from '@/lib/invest/stocks';
-import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
-import { quotesFor } from '@/lib/invest/view';
+import { loadMoneyToday } from '@/lib/invest/load';
 import { currentMonth, invoiceMonth, monthLabel } from '@/lib/shared/model';
 import { findSharedId, readShared } from '@/lib/shared/store';
 import { RevenueChart } from './charts/RevenueChart';
@@ -26,21 +21,6 @@ import { Empty, NotImported, Panel, Pill, ShareBars, Stat } from './ui';
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const signedMoney = (x: number, c: DisplayCurrency) => `${x >= 0 ? '+' : '−'}${money(Math.abs(x), c)}`;
 const signedPct = (x: number) => `${x >= 0 ? '+' : '−'}${Math.abs(x).toFixed(1)}%`;
-const minusDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
-
-/** Today's money across IBKR and the Livret Bleu (two weeks of quotes is plenty), or null when no portfolio sheet is linked. */
-async function loadStocks(g: Google, today: string) {
-  const id = await findPortfolioId(g.drive);
-  if (!id) return null;
-  const p = await readPortfolio(g.sheets, id);
-  const from = minusDays(today, 14);
-  const yahoo = new Map(p.symbols.map((s) => [s.symbol, s.yahoo]));
-  const symbols = [...new Set(Object.keys(holdings(p.trades)).map((s) => yahoo.get(s) ?? '').filter(Boolean))];
-  const [rates, ...series] = await Promise.all([fetchDailyRates(from, today), ...symbols.map((y) => fetchSeries(y, from, today))]);
-  const { quotes } = quotesFor(p, Object.fromEntries(symbols.map((y, i) => [y, series[i]])), rates, today);
-  return moneyBreakdown(p, stockSummary(p, quotes).valueEur, today);
-}
-
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ p?: string; ccy?: string }> }) {
   const params = await searchParams;
   const g = await getGoogle();
@@ -49,7 +29,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const [{ rows, failed }, shared, stocks] = await Promise.all([
     syncIndex(g, await requireIds(g)),
     findSharedId(g.drive).then((id) => (id ? readShared(g.sheets, id) : null)),
-    loadStocks(g, today),
+    loadMoneyToday(g, today),
   ]);
   const oldest = rows.length ? rows.map(invoiceMonth).sort()[0] : null;
   const fx = buildFx(await fetchMonthlyRates(oldest ?? now, today), shared?.months ?? []);
