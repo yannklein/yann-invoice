@@ -8,14 +8,18 @@ export interface Google {
   accessToken: string;
 }
 
-export async function getGoogle(): Promise<Google> {
-  const session = await auth();
-  if (!session?.accessToken || session.error) redirect('/api/auth/signin');
+export function googleFromAccessToken(accessToken: string): Google {
   const oauth = new google.auth.OAuth2();
-  oauth.setCredentials({ access_token: session.accessToken });
+  oauth.setCredentials({ access_token: accessToken });
   return {
     drive: google.drive({ version: 'v3', auth: oauth }),
     sheets: google.sheets({ version: 'v4', auth: oauth }),
-    accessToken: session.accessToken,
+    accessToken,
   };
+}
+
+export async function getGoogle(): Promise<Google> {
+  const session = await auth();
+  if (!session?.accessToken || session.error) redirect('/api/auth/signin');
+  return googleFromAccessToken(session.accessToken);
 }

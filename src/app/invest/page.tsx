@@ -3,13 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { money } from '@/lib/dashboard/format';
 import { todayDate } from '@/lib/dashboard/period';
-import { fetchDailyRates } from '@/lib/fx/history';
 import { getGoogle } from '@/lib/google/client';
 import { holdings } from '@/lib/invest/holdings';
-import { fetchSeries, type PriceSeries } from '@/lib/invest/prices';
 import { flowsOf } from '@/lib/invest/simulate';
-import { findPortfolioId, readPortfolio } from '@/lib/invest/store';
-import { buildView } from '@/lib/invest/view';
+import { loadInvestView } from '@/lib/invest/load';
 import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
@@ -32,13 +29,14 @@ const eurCents = (x: number) => money(x, 'EUR', true);
 const longDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const monthYear = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const dayMonthShort = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const minusDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
 
 export default async function InvestPage({ searchParams }: { searchParams: Promise<{ amount?: string }> }) {
   const { amount } = await searchParams;
   const g = await getGoogle();
-  const id = await findPortfolioId(g.drive);
-  if (!id) {
+  const today = todayDate();
+  const override = amount !== undefined && amount !== '' && Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : null;
+  const loaded = await loadInvestView(g, today, override);
+  if (!loaded) {
     return (
       <Panel title="Invest">
         <p className="text-sm">
@@ -47,18 +45,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
       </Panel>
     );
   }
-
-  const p = await readPortfolio(g.sheets, id);
-  const today = todayDate();
-  const firstDate = [flowsOf(p)[0]?.date, p.snapshots[0]?.date, p.trades[0]?.date, today].filter((d): d is string => !!d).sort()[0];
-  const from = minusDays(firstDate, 7);
-  const bySymbol = new Map(p.symbols.map((s) => [s.symbol, s.yahoo]));
-  const wanted = [...Object.keys(holdings(p.trades)), ...p.slots.flatMap((s) => [s.buySymbol, s.sriSymbol ?? ''])].map((s) => bySymbol.get(s) ?? '');
-  const yahoos = [...new Set([...wanted, ...p.benchmarks.map((b) => b.yahoo)].filter(Boolean))];
-  const [rates, ...fetched] = await Promise.all([fetchDailyRates(from, today), ...yahoos.map((y) => fetchSeries(y, from, today))]);
-  const series: Record<string, PriceSeries | null> = Object.fromEntries(yahoos.map((y, i) => [y, fetched[i]]));
-  const override = amount !== undefined && amount !== '' && Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : null;
-  const v = buildView(p, series, rates, today, override);
+  const { id, p, v } = loaded;
 
   // Chart rows: one per weekly date, You split into exact and approximate (sharing the first exact point so the line joins).
   const firstExact = v.you.find((x) => !x.approx);
