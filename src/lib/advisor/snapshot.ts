@@ -7,6 +7,7 @@ import type { Google } from '@/lib/google/client';
 import { domicileOf } from '@/lib/invest/domicile';
 import { holdings } from '@/lib/invest/holdings';
 import { project } from '@/lib/invest/projection';
+import { safeCash } from '@/lib/invest/safeCash';
 import type { Portfolio } from '@/lib/invest/types';
 import type { InvestView } from '@/lib/invest/view';
 import { clientKey, effectiveCountry } from '@/lib/invoice/derive';
@@ -144,8 +145,9 @@ export function renderHousehold(d: FinanceData, ccy: DisplayCurrency, range: { f
   return out.filter((l) => l !== '').join('\n').replace(/\n(#+ )/g, '\n\n$1');
 }
 
-export function renderPortfolio({ p, v }: { p: Portfolio; v: InvestView }, today: string): string {
+export function renderPortfolio({ p, v }: { p: Portfolio; v: InvestView }, today: string, shared: FinanceData['shared']): string {
   const b = v.breakdown;
+  const safe = shared && safeCash(shared.months, shared.lines);
   const info = new Map(p.symbols.map((s) => [s.symbol, s]));
   const held = holdings(p.trades);
   const quote = new Map(v.quotes.map((q) => [q.symbol, q]));
@@ -183,6 +185,7 @@ export function renderPortfolio({ p, v }: { p: Portfolio; v: InvestView }, today
     '### Target mix (slots) and this buy round',
     table(['Slot', 'Kind', 'Target', 'Now', 'Buys', 'SRI alternative', 'Livret counts here', 'Next round buy'], slotRows),
     `- Plan: buy in ${p.plan.buyMonths.map((m) => MONTH_NAMES[m - 1]).join(', ') || 'no months set'}, ${eur(p.plan.perBuyEur)} per buy${v.nextBuy ? ` · next buy ${v.nextBuy.date} (in ${v.nextBuy.days} days)` : ''} · next round ${eur(v.round.amountEur)}${v.round.fromCashEur > 0 ? ` (includes ${eurCents(v.round.fromCashEur)} IBKR cash)` : ''}`,
+    safe ? `- Safe cash: **${eur(safe.safeEur)}** kept out of the market = ${safe.months} months × ${eur(safe.monthlyEur)} average living costs over the last ${safe.sampleMonths} saved months (housing, subscriptions, other spending and the shared-account transfer; savings and taxes left out). Before buying, all accounts together should hold this plus the round: ${eur(safe.safeEur + v.round.amountEur)} across all accounts for the next round. The Livret Bleu counts towards it; bank balances are not in this data, so whether it is met cannot be checked here.` : '',
     v.round.driftNote ? '- The mix has drifted more than 10 points from target (the round buys steer it back without selling).' : '',
     `- SRI share of ETFs: ${v.sriSharePct}%`,
     '',
@@ -249,7 +252,7 @@ export function renderSnapshot(d: FinanceData, today: string, ccy: DisplayCurren
     '',
     renderHousehold(d, ccy),
     '',
-    d.invest ? renderPortfolio(d.invest, today) : '## Portfolio\n_No portfolio sheet is linked._',
+    d.invest ? renderPortfolio(d.invest, today, d.shared) : '## Portfolio\n_No portfolio sheet is linked._',
     '',
     '## Not covered by this data',
     ...NOT_COVERED.map((x) => `- ${x}`),

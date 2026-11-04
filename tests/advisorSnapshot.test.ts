@@ -61,6 +61,13 @@ describe('renderSnapshot', () => {
     expect(s).toContain('Total: **€2,493**');
     expect(s).toContain('per buy');
   });
+  it('gives the safe cash level and what to hold before the next round', () => {
+    // Aug: €10 Netflix, transfer −€10 = €0. Sep: €1,000 rent, transfer €1,620 = €2,620 (the €800 IRPF stays out). €1,310 a month.
+    expect(s).toContain('Safe cash: **€7,900**');
+    expect(s).toContain('6 months × €1,310');
+    expect(s).toContain('€12,900 across all accounts');
+  });
+  it('leaves safe cash out without a shared account', () => expect(renderSnapshot({ ...data, shared: null }, TODAY)).not.toContain('Safe cash'));
   it('flags approximate rates and failed sheets', () => {
     const w = renderSnapshot({ ...data, failed: 2, fx: { ...FX, approximate: true } }, TODAY);
     expect(w).toContain('approximate');

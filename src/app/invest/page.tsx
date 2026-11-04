@@ -7,6 +7,8 @@ import { getGoogle } from '@/lib/google/client';
 import { holdings } from '@/lib/invest/holdings';
 import { flowsOf } from '@/lib/invest/simulate';
 import { loadInvestView } from '@/lib/invest/load';
+import { safeCash } from '@/lib/invest/safeCash';
+import { findSharedId, readShared } from '@/lib/shared/store';
 import { sheetUrl } from '@/lib/invoice/pdf';
 import { Panel, Section, Stat } from '../dashboard/ui';
 import { addCashAction, switchToSriAction } from './actions';
@@ -17,6 +19,7 @@ import { HistoryChart, type HistoryPoint } from './charts/HistoryChart';
 import { PurchasesChart } from './charts/PurchasesChart';
 import { purchasesByMonth } from '@/lib/invest/purchases';
 import { LegendsChart, type ChartRow, type ChartSeries } from './charts/LegendsChart';
+import { MixChart } from './charts/MixChart';
 import { LongGame } from './LongGame';
 import { UploadCard } from './UploadCard';
 
@@ -35,7 +38,10 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
   const g = await getGoogle();
   const today = todayDate();
   const override = amount !== undefined && amount !== '' && Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : null;
-  const loaded = await loadInvestView(g, today, override);
+  const [loaded, shared] = await Promise.all([
+    loadInvestView(g, today, override),
+    findSharedId(g.drive).then((sharedId) => (sharedId ? readShared(g.sheets, sharedId) : null)),
+  ]);
   if (!loaded) {
     return (
       <Panel title="Invest">
@@ -46,6 +52,7 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
     );
   }
   const { id, p, v } = loaded;
+  const safe = shared && safeCash(shared.months, shared.lines);
 
   // Chart rows: one per weekly date, You split into exact and approximate (sharing the first exact point so the line joins).
   const firstExact = v.you.find((x) => !x.approx);
@@ -115,9 +122,27 @@ export default async function InvestPage({ searchParams }: { searchParams: Promi
         <Breakdown b={v.breakdown} closed={v.closed} />
       </Panel>
 
+      {v.mix.groups.length > 0 && (
+        <Panel title={`Your mix · ${eur(v.mix.totalEur)}`}>
+          <MixChart groups={v.mix.groups} />
+        </Panel>
+      )}
+
       <Section title="This round">
         <Panel title="What to buy">
           <div className="space-y-5 text-sm">
+            {safe ? (
+              <div className="space-y-1">
+                <p className="eyebrow">Before you buy</p>
+                <p className="text-2xl font-black tabular-nums">{eur(safe.safeEur + v.round.amountEur)} across all your accounts</p>
+                <p className="tabular-nums text-foreground/80">Safe cash {eur(safe.safeEur)} + this round {eur(v.round.amountEur)}</p>
+                <p className="text-xs text-foreground/50">
+                  Safe cash = {safe.months} months × {eur(safe.monthlyEur)} average living costs over the last {safe.sampleMonths} saved months: housing, subscriptions, other spending and the shared-account transfer. Savings and taxes are left out.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-foreground/50">Import the <Link className="underline" href="/shared">shared account</Link> to get a safe cash level.</p>
+            )}
             <form key={v.round.amountEur} className="flex flex-wrap items-end gap-2" action="/invest">
               <label className="grid gap-1">
                 <span className="eyebrow">Amount</span>
