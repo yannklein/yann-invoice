@@ -1,6 +1,7 @@
 import { dailyRateFor, type DailyRates } from '@/lib/fx/history';
 import { closedHistory, moneyBreakdown, type ClosedHistory, type MoneyBreakdown } from './breakdown';
 import { holdings, ibkrCashEur, livretOn, nextBuyDate, rebalance, slotValues } from './holdings';
+import { stockMix, type StockMix } from './mix';
 import type { PriceSeries } from './prices';
 import { blendedReturn, buffettHorizon, project } from './projection';
 import { badges, lazyStreak, quips, scoreboardQuip, type Badge } from './quips';
@@ -38,6 +39,8 @@ export interface InvestView {
   quotes: Quote[];
   sri: { slot: string; current: SymbolInfo | null; candidate: SymbolInfo | null; usingSri: boolean }[];
   sriSharePct: number;
+  /** Today's money per slot and fund, counted like the buy table. */
+  mix: StockMix;
   longGame: { perBuyEur: number; buysPerYear: number; realReturn: number; startEur: number; buffettYears: number | null };
   legends: { name: string; bookWeights: boolean; points: SeriesPoint[]; valueEur: number | null; diffVsYou: number | null; quip: string }[];
   you: (SeriesPoint & { approx: boolean })[];
@@ -178,7 +181,7 @@ export function buildView(p: Portfolio, series: Record<string, PriceSeries | nul
     today, nextBuy: nextBuyDate(today, p.plan.buyMonths), lazyDays: lazyStreak(today, lastTradeDate), badges: badges(ctx), quips: quips(ctx),
     valueEur, investedEur, breakdown: moneyBreakdown(p, holdingsValue, today), closed: closedHistory(p), ibkrCashEur: cash, livretEur: livret,
     round: { amountEur, fromCashEur, lines, driftNote: driftPts.some((d) => Math.abs(d) > 10) },
-    unassigned, quotes, sri, sriSharePct, longGame, legends, you,
+    unassigned, quotes, sri, sriSharePct, mix: stockMix(p.slots, p.symbols, values, livret), longGame, legends, you,
     trades: p.trades, invalidRows: p.invalidRows, missingSeries: [...missingSeries],
   };
 }

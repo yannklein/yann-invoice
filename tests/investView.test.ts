@@ -25,6 +25,14 @@ const prices: Record<string, PriceSeries | null> = {
 const allFinite = (x: unknown): boolean =>
   typeof x === 'number' ? Number.isFinite(x) : Array.isArray(x) ? x.every(allFinite) : x && typeof x === 'object' ? Object.values(x).every(allFinite) : true;
 
+describe('buildView: mix', () => {
+  it('shows the same slot shares as the buy table, Livret Bleu included', () => {
+    const v = buildView(portfolio({ cash: [{ date: '2026-10-01', deposit: 0, balance: 500, note: '' }] }), prices, {}, TODAY, 1000);
+    expect(v.mix.groups.map((g) => g.pct)).toEqual(v.round.lines.map((l) => l.nowPct));
+    expect(v.mix.groups.at(-1)?.parts.map((x) => x.label)).toEqual(['CSBGE3', 'Livret Bleu']);
+  });
+});
+
 describe('buildView: this round', () => {
   const v = buildView(portfolio(), prices, {}, TODAY, 1000);
   it('splits the requested amount over the slots', () => {
