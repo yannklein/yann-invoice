@@ -94,12 +94,12 @@ export function createServer(g: Google, today: string, user: string): McpServer 
     'portfolio',
     {
       title: 'Portfolio',
-      description: 'Money today and where it came from, holdings with ISIN/TER/SRI/domicile, target mix vs actual, the next buy round, plan assumptions, projection and comparison with simple strategies.',
+      description: 'Money today and where it came from, holdings with ISIN/TER/SRI/domicile, target mix vs actual, the next buy round, the safe cash level to keep out of the market, plan assumptions, projection and comparison with simple strategies.',
       annotations: READ_ONLY,
     },
     () => run(async () => {
       const d = await data();
-      return d.invest ? renderPortfolio(d.invest, today) : 'No portfolio sheet is linked.';
+      return d.invest ? renderPortfolio(d.invest, today, d.shared) : 'No portfolio sheet is linked.';
     }),
   );
 
